@@ -16,9 +16,9 @@ type UserController struct {
 // @Description 用户注册
 // @Param  models.User
 // @Success helper.SUCCESS {object} models.User
-// @Failure helper.SQL_ERROR 注册失败
-// @Failure helper.EXIST_FAILED 用户名已存在
-// @Failure helper.REPASSWORD_FAIELD 两次密码不一致
+// @Failure helper.SQL_ERROR {object} helper.RestfulReturn 注册失败
+// @Failure helper.EXIST_FAILED {object} helper.RestfulReturn 用户名已存在
+// @Failure helper.REPASSWORD_FAIELD {object} helper.RestfulReturn 两次密码不一致
 // @router /register
 func (this *UserController) Register() {
 	user := models.User{}
@@ -67,9 +67,9 @@ func (this *UserController) Register() {
 // @Description 用户登录
 // @Param  models.User
 // @Success helper.SUCCESS {object} models.User
-// @Failure helper.SQL_ERROR 登录失败
-// @Failure helper.NOT_EXIST_FAILED 用户不存在
-// @Failure helper.PASSWORD_ERROR 密码错误
+// @Failure helper.SQL_ERROR {object} helper.RestfulReturn 登录失败
+// @Failure helper.NOT_EXIST_FAILED {object} helper.RestfulReturn 用户不存在
+// @Failure helper.PASSWORD_ERROR {object} helper.RestfulReturn 密码错误
 // @router /login
 func (this *UserController) Login() {
 	postData := models.User{}
