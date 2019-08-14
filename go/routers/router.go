@@ -8,6 +8,7 @@
 package routers
 
 import (
+	"chat-room/go/models"
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/plugins/cors"
 	"chat-room/go/controllers"
@@ -16,6 +17,21 @@ import (
 func init() {
 	// API
 	beego.AutoRouter(&controllers.ApiController{})
+
+	ns := beego.NewNamespace("/v1",
+		beego.NSNamespace("*",
+			//Options用于跨域复杂请求预检
+			beego.NSRouter("/*", &controllers.BaseController{}, "options:Options"),
+		),
+		beego.NSNamespace("/user",
+			beego.NSInclude(
+				&controllers.UserController{},
+			),
+		),
+	)
+	beego.Debug("models.Domain", models.Domain)
+	beego.AddNamespace(ns)
+
 
 	beego.InsertFilter("*", beego.BeforeRouter, cors.Allow(&cors.Options{
 		AllowAllOrigins:  true,

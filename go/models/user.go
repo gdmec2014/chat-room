@@ -7,10 +7,14 @@ import (
 
 type User struct {
 	Id         int64     `xorm:"not null pk autoincr INT(64)" json:"uid,omitempty"`
-	Name       string    `xorm:"not null comment('名字') unique VARCHAR(255)" json:"name,omitempty"`
+	Name       string    `xorm:"not null comment('名字') unique VARCHAR(50)" json:"name,omitempty"`
 	WxId       string    `xorm:"not null comment('微信ID') unique VARCHAR(255)" json:"wx_id,omitempty"`
+	Avatar     string    `xorm:"null comment('头像') VARCHAR(255)" json:"avatar,omitempty"`
+	Password   string    `xorm:"not null comment('密码') VARCHAR(255)" json:"password,omitempty"`
+	Token      string    `xorm:"null comment('登录凭证') VARCHAR(255)" json:"token,omitempty"`
 	LastLogin  time.Time `xorm:"comment('最后登录时间') not null DATETIME" json:"last_login,omitempty"`
 	DeleteTime time.Time `xorm:"comment('删除时间') DATETIME" json:"delete_time,omitempty"`
+	RePassword string    `xorm:"-" json:"re_password,omitempty"`
 }
 
 func AddUser(user *User) error {
