@@ -1,8 +1,8 @@
 package main
 
 import (
-	_ "chat-room/go/routers"
-	helper "chat-room/go/helper"
+	_ "chat-room/api/routers"
+	helper "chat-room/api/helper"
 	"github.com/astaxie/beego"
 	"os"
 	"fmt"

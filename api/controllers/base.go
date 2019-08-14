@@ -3,7 +3,7 @@ package controllers
 import (
 	"encoding/json"
 	"github.com/astaxie/beego"
-	"chat-room/go/helper"
+	"chat-room/api/helper"
 	"strings"
 )
 

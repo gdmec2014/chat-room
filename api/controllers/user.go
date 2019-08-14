@@ -1,8 +1,8 @@
 package controllers
 
 import (
-	"chat-room/go/helper"
-	"chat-room/go/models"
+	"chat-room/api/helper"
+	"chat-room/api/models"
 	"strconv"
 	"time"
 )

@@ -2,7 +2,7 @@ package models
 
 import (
 	"github.com/pkg/errors"
-	"chat-room/go/helper"
+	"chat-room/api/helper"
 	"time"
 )
 

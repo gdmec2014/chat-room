@@ -1,4 +1,4 @@
-module chat-room/go
+module chat-room/api
 
 go 1.12
 

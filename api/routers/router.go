@@ -8,7 +8,7 @@
 package routers
 
 import (
-	"chat-room/go/controllers"
+	"chat-room/api/controllers"
 	"github.com/astaxie/beego"
 )
 

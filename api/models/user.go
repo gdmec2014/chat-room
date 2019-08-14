@@ -1,7 +1,7 @@
 package models
 
 import (
-	"chat-room/go/helper"
+	"chat-room/api/helper"
 	"time"
 )
 
