@@ -1,3 +1,1 @@
-
-bee generate docs
-bee run watchall true
+bee run -gendoc=true -downdoc=true

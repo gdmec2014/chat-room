@@ -14,12 +14,12 @@ type UserController struct {
 
 // @Title 注册
 // @Description 用户注册
-// @Param  models.User
+// @Param body body models.User "用户注册"
 // @Success helper.SUCCESS {object} models.User
 // @Failure helper.SQL_ERROR {object} helper.RestfulReturn 注册失败
 // @Failure helper.EXIST_FAILED {object} helper.RestfulReturn 用户名已存在
 // @Failure helper.REPASSWORD_FAIELD {object} helper.RestfulReturn 两次密码不一致
-// @router /register
+// @router /register [post]
 func (this *UserController) Register() {
 	user := models.User{}
 	this.GetPostDataNotStop(&user)
@@ -65,12 +65,12 @@ func (this *UserController) Register() {
 
 // @Title 登录
 // @Description 用户登录
-// @Param  models.User
+// @Param body body models.User "用户登录参数"
 // @Success helper.SUCCESS {object} models.User
 // @Failure helper.SQL_ERROR {object} helper.RestfulReturn 登录失败
 // @Failure helper.NOT_EXIST_FAILED {object} helper.RestfulReturn 用户不存在
 // @Failure helper.PASSWORD_ERROR {object} helper.RestfulReturn 密码错误
-// @router /login
+// @router /login [post]
 func (this *UserController) Login() {
 	postData := models.User{}
 	this.GetPostDataNotStop(&postData)

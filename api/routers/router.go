@@ -15,4 +15,12 @@ import (
 func init() {
 	// API
 	beego.AutoRouter(&controllers.ApiController{})
+	ns := beego.NewNamespace("/v1",
+		beego.NSNamespace("/user",
+			beego.NSInclude(
+				&controllers.UserController{},
+			),
+		),
+	)
+	beego.AddNamespace(ns)
 }

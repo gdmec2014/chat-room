@@ -11,331 +11,79 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 basePath: /v1
 paths:
-  /admin/check_login:
-    get:
-      tags:
-      - admin
-      description: Check Admin Login
-      operationId: AdminController.Check Admin Login
-      responses:
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /admin/login:
+  /user/login:
     post:
       tags:
-      - admin
-      description: Admin Login
-      operationId: AdminController.Admin Login
+      - user
+      description: 用户登录
+      operationId: UserController.登录
       parameters:
       - in: body
         name: body
-        description: body for Admin content
-        required: true
+        description: 用户登录参数
         schema:
-          $ref: '#/definitions/models.Admin'
+          $ref: '#/definitions/models.User'
       responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /comment/add:
+        helper.NOT_EXIST_FAILED:
+          description: '{object} helper.RestfulReturn 用户不存在'
+        helper.PASSWORD_ERROR:
+          description: '{object} helper.RestfulReturn 密码错误'
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn 登录失败'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/models.User'
+  /user/register:
     post:
       tags:
-      - comment
-      description: Add Comment
-      operationId: CommentController.Add Comment
+      - user
+      description: 用户注册
+      operationId: UserController.注册
       parameters:
       - in: body
         name: body
-        description: body for Comment content
-        required: true
+        description: 用户注册
         schema:
-          $ref: '#/definitions/models.Comment'
+          $ref: '#/definitions/models.User'
       responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /comment/delete:
-    post:
-      tags:
-      - comment
-      description: Delete Comment
-      operationId: CommentController.Delete Comment
-      parameters:
-      - in: body
-        name: body
-        description: body for Comment content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Comment'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /comment/get:
-    post:
-      tags:
-      - comment
-      description: Get Post Comment
-      operationId: CommentController.Get Comment
-      parameters:
-      - in: body
-        name: body
-        description: body for Comment content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Comment'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /count/add:
-    post:
-      tags:
-      - count
-      description: Add Post Count
-      operationId: CountController.Add Count
-      parameters:
-      - in: body
-        name: body
-        description: body for Count content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Count'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /count/add_get:
-    post:
-      tags:
-      - count
-      description: 获取浏览数和添加浏览数
-      operationId: CountController.Add And Get Count
-      parameters:
-      - in: body
-        name: body
-        description: body for Count content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Count'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /count/get:
-    post:
-      tags:
-      - count
-      description: Get Post Count
-      operationId: CountController.Get Count
-      parameters:
-      - in: body
-        name: body
-        description: body for Count content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Count'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /qiniu/uptoken_key:
-    get:
-      tags:
-      - qiniu
-      description: Get Uptoken Key
-      operationId: QiniuController.Get Uptoken Key
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /qiniu/uptoken_web:
-    get:
-      tags:
-      - qiniu
-      description: Get Uptoken Web
-      operationId: QiniuController.Get Uptoken Web
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /twitter/add:
-    post:
-      tags:
-      - twitter
-      description: Add Twitter
-      operationId: TwitterController.Add Twitter
-      parameters:
-      - in: body
-        name: body
-        description: body for Twitter content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Twitter'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /twitter/delete:
-    post:
-      tags:
-      - twitter
-      description: Delete Twitter
-      operationId: TwitterController.Delete Twitter
-      parameters:
-      - in: body
-        name: body
-        description: body for Twitter content
-        required: true
-        schema:
-          $ref: '#/definitions/models.Twitter'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
-  /twitter/get:
-    post:
-      tags:
-      - twitter
-      description: Get Twitter
-      operationId: TwitterController.Get Twitter
-      parameters:
-      - in: body
-        name: body
-        description: body for Twitter content
-        required: true
-        schema:
-          $ref: '#/definitions/.Page'
-      responses:
-        "403":
-          description: body is empty
-        "10000":
-          description: '{struct} helper.RestfulReturn'
-        "10001":
-          description: '{struct} helper.RestfulReturn'
+        helper.EXIST_FAILED:
+          description: '{object} helper.RestfulReturn 用户名已存在'
+        helper.REPASSWORD_FAIELD:
+          description: '{object} helper.RestfulReturn 两次密码不一致'
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn 注册失败'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/models.User'
 definitions:
-  .Page:
-    type: object
-  models.Admin:
-    title: Admin
+  models.User:
+    title: User
     type: object
     properties:
-      aid:
-        type: integer
-        format: int64
+      avatar:
+        type: string
       delete_time:
         type: string
-        format: string
+        format: datetime
       last_login:
         type: string
-        format: string
-      pass_word:
+        format: datetime
+      name:
+        type: string
+      password:
+        type: string
+      re_password:
         type: string
       token:
         type: string
-      user_name:
-        type: string
-  models.Comment:
-    title: Comment
-    type: object
-    properties:
-      commid:
+      uid:
         type: integer
         format: int64
-      content:
+      wx_id:
         type: string
-      delete_time:
-        type: string
-        format: string
-      father_id:
-        type: integer
-        format: int64
-      son_id:
-        type: integer
-        format: int64
-      update_time:
-        type: string
-        format: string
-      url:
-        type: string
-      user_id:
-        type: integer
-        format: int64
-  models.Count:
-    title: Count
-    type: object
-    properties:
-      count:
-        type: integer
-        format: int64
-      delete_time:
-        type: string
-        format: string
-      id:
-        type: integer
-        format: int64
-      url:
-        type: string
-  models.Twitter:
-    title: Twitter
-    type: object
-    properties:
-      content:
-        type: string
-      delete_time:
-        type: string
-        format: string
-      tw_id:
-        type: integer
-        format: int64
-      update_time:
-        type: string
-        format: string
 tags:
-- name: count
+- name: user
   description: |
-    Operations about count
-- name: comment
-  description: |
-    Operations about Comment
-- name: admin
-  description: |
-    Operations about Admin
-- name: twitter
-  description: |
-    Operations about Twitter
+    Operations about Api
