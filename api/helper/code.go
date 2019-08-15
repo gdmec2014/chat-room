@@ -6,7 +6,11 @@ type Status int
 const SUCCESS Status = 10000
 
 //失败
-const FAILED Status = 30000
+const (
+	_                 Status = iota + 29999
+	FAILED             //30000 操作失败
+	LOGIN_EXPIRACTION  //30001 登录失效
+)
 
 //数据库错误
 const SQL_ERROR Status = 50000
@@ -20,6 +24,7 @@ const (
 	REPASSWORD_FAIELD  //20003 两次密码不一致
 	PASSWORD_ERROR     //20004 密码错误
 	NOT_EXIST_FAILED   //20005 用户不存在
+	TOKEN_ERROR        //20006 token错误
 )
 
 //系统错误
