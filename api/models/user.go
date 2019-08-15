@@ -49,13 +49,3 @@ func DeleteUser(user *User) error {
 	whereData = append(whereData, user.Id)
 	return Delete(user, "id=?", whereData)
 }
-
-func GetUserByToken(user *User) (has bool, User User, err error) {
-	has, err = db.Table("user").Where("token =?", user.Token).Get(&User)
-	User.Password = ""
-	if helper.Error(err) {
-		return
-	}
-	return
-}
-

@@ -36,8 +36,6 @@ func (this *BaseController) SetReturnData(result helper.Status, message string, 
 	rt := &helper.RestfulReturn{Result: result, Message: message, Data: data}
 	this.Data["json"] = rt
 	this.ServeJSON()
-	this.Finish()
-	this.StopRun()
 }
 
 //非空数据
@@ -88,4 +86,3 @@ func (this *BaseController) GetPostDataNotStop(data interface{}) {
 	json.Unmarshal(this.Ctx.Input.RequestBody, data)
 	helper.Debug(string(this.Ctx.Input.RequestBody))
 }
-
