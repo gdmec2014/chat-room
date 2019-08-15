@@ -98,11 +98,11 @@
                 },
                 "delete_time": {
                     "type": "string",
-                    "format": "datetime"
+                    "format": "string"
                 },
                 "last_login": {
                     "type": "string",
-                    "format": "datetime"
+                    "format": "string"
                 },
                 "name": {
                     "type": "string"

@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"github.com/astaxie/beego"
 	"math/rand"
@@ -9,14 +11,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"encoding/hex"
-	"crypto/md5"
 )
 
 var (
-	IsDebug = GetBool(GetAppConf("IsDebug"))
+	IsDebug  = GetBool(GetAppConf("IsDebug"))
 	TimeZone = "Asia/Chongqing"
-	Layout = "2006-01-02 15:04:05"
+	Layout   = "2006-01-02 15:04:05"
 )
 
 //error

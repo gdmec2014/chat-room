@@ -1,9 +1,9 @@
 package controllers
 
 import (
+	"chat-room/api/helper"
 	"encoding/json"
 	"github.com/astaxie/beego"
-	"chat-room/api/helper"
 	"strings"
 )
 
@@ -23,7 +23,7 @@ func (this *BaseController) Options() {
 
 //跨域
 func (this *BaseController) AllowCross() {
-	this.Ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")                 //允许访问源
+	this.Ctx.ResponseWriter.Header().Set("Access-Control-Allow-Origin", "*")                           //允许访问源
 	this.Ctx.ResponseWriter.Header().Set("Access-Control-Allow-Methods", "POST, GET, PUT, OPTIONS")    //允许post访问
 	this.Ctx.ResponseWriter.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization") //header的类型
 	this.Ctx.ResponseWriter.Header().Set("Access-Control-Max-Age", "1728000")
