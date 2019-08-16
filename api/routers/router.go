@@ -9,12 +9,16 @@ package routers
 
 import (
 	"chat-room/api/controllers"
+	"chat-room/api/webscoket"
+
 	"github.com/astaxie/beego"
 )
 
 func init() {
 	// API
 	beego.AutoRouter(&controllers.ApiController{})
+
+	// 二级api
 	ns := beego.NewNamespace("/v1",
 		beego.NSNamespace("/auth",
 			beego.NSInclude(
@@ -24,6 +28,11 @@ func init() {
 		beego.NSNamespace("/user",
 			beego.NSInclude(
 				&controllers.UserController{},
+			),
+		),
+		beego.NSNamespace("/room",
+			beego.NSInclude(
+				&webscoket.WebSocketController{},
 			),
 		),
 	)

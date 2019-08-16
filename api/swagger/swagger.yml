@@ -11,12 +11,12 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
 basePath: /v1
 paths:
-  /user/login:
+  /auth/login:
     post:
       tags:
-      - user
+      - auth
       description: 用户登录
-      operationId: UserController.登录
+      operationId: AuthController.登录
       parameters:
       - in: body
         name: body
@@ -34,12 +34,12 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.User'
-  /user/register:
+  /auth/register:
     post:
       tags:
-      - user
+      - auth
       description: 用户注册
-      operationId: UserController.注册
+      operationId: AuthController.注册
       parameters:
       - in: body
         name: body
@@ -57,7 +57,107 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.User'
+  /room/create:
+    post:
+      tags:
+      - room
+      description: 创建房间
+      operationId: WebSocketController.创建房间
+      parameters:
+      - in: body
+        name: body
+        description: 房间名字
+        schema:
+          $ref: '#/definitions/Room'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/helper.RestfulReturn'
+  /room/get_room_member:
+    post:
+      tags:
+      - room
+      description: 获取房间成员
+      operationId: WebSocketController.获取房间成员
+      parameters:
+      - in: body
+        name: body
+        description: 房间ID
+        schema:
+          $ref: '#/definitions/Room'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/helper.RestfulReturn'
+  /room/join:
+    post:
+      tags:
+      - room
+      description: 加入房间
+      operationId: WebSocketController.加入房间
+      parameters:
+      - in: body
+        name: body
+        description: 房间ID
+        schema:
+          $ref: '#/definitions/Room'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn "加入失败"'
+        helper.SUCCESS:
+          description: '"加入成功"'
+          schema:
+            $ref: '#/definitions/helper.RestfulReturn'
+  /user/update_avatar:
+    post:
+      tags:
+      - user
+      description: 修改头像
+      operationId: UserController.修改头像
+      parameters:
+      - in: body
+        name: body
+        description: 头像地址
+        schema:
+          $ref: '#/definitions/models.User'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn 修改失败'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/models.User'
 definitions:
+  989.0xc00026b590.false:
+    title: "false"
+    type: object
+  Room:
+    title: Room
+    type: object
+  helper.RestfulReturn:
+    title: RestfulReturn
+    type: object
+    properties:
+      Data:
+        $ref: '#/definitions/989.0xc00026b590.false'
+      Message:
+        type: string
+      Result:
+        $ref: '#/definitions/helper.Status'
+  helper.Status:
+    title: Status
+    format: int64
+    type: integer
+    enum:
+    - SUCCESS = 10000
+    - SQL_ERROR = 50000
+    example: 10000
   models.User:
     title: User
     type: object
@@ -66,10 +166,10 @@ definitions:
         type: string
       delete_time:
         type: string
-        format: string
+        format: datetime
       last_login:
         type: string
-        format: string
+        format: datetime
       name:
         type: string
       password:
@@ -84,6 +184,12 @@ definitions:
       wx_id:
         type: string
 tags:
+- name: auth
+  description: |
+    登录注册
 - name: user
   description: |
-    Operations about Api
+    用户类
+- name: room
+  description: |
+    WebSocketController
