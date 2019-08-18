@@ -32,12 +32,18 @@ func (this *BaseController) AllowCross() {
 }
 
 //返回json数据
-func (this *BaseController) SetReturnData(result helper.Status, message string, data interface{}) {
+func (this *BaseController) SetReturnData(result helper.Status, message string, data interface{}, needStopRun ...bool) {
 	rt := &helper.RestfulReturn{Result: result, Message: message, Data: data}
 	this.Data["json"] = rt
 	this.ServeJSON()
 	this.Finish()
-	this.StopRun()
+	if len(needStopRun) > 0 {
+		if needStopRun[0] {
+			this.StopRun()
+		}
+	} else {
+		this.StopRun()
+	}
 }
 
 //非空数据
@@ -88,4 +94,3 @@ func (this *BaseController) GetPostDataNotStop(data interface{}) {
 	json.Unmarshal(this.Ctx.Input.RequestBody, data)
 	helper.Debug(string(this.Ctx.Input.RequestBody))
 }
-

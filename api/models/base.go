@@ -54,6 +54,9 @@ type admin struct {
 }
 
 func init() {
+
+	DBOk = false
+
 	//web
 	Domain = GetAppConf("web::domain")
 	helper.Debug("Domain :", Domain)

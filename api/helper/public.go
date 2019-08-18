@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 	"math/rand"
 	"os"
+	"reflect"
 	"runtime"
 	"strconv"
 	"strings"
@@ -141,4 +142,28 @@ func StringDateFormatInt(t string, layout ...string) (unix_time int64) {
 		return 0
 	}
 	return datetime.Unix()
+}
+
+//判断元素存在
+func Contain(parent interface{}, child interface{}) bool {
+
+	parentValue := reflect.ValueOf(parent)
+
+	switch reflect.TypeOf(parent).Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < parentValue.Len(); i++ {
+			if parentValue.Index(i).Interface() == child {
+				return true
+			}
+		}
+	case reflect.String:
+		return strings.Contains(parentValue.String(), reflect.ValueOf(child).String())
+	case reflect.Map:
+		if parentValue.MapIndex(reflect.ValueOf(child)).IsValid() {
+			return true
+		}
+	}
+
+	return false
+
 }

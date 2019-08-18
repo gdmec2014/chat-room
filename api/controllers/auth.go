@@ -46,8 +46,9 @@ func (this *AuthController) Register() {
 	user.Password = helper.Md5(user.Password + models.SaltCode + strconv.Itoa(int(user.Id)))
 
 	var whereData []interface{}
+	whereData = append(whereData, user.Name)
 
-	err = models.Update(&user, "", whereData, "password")
+	err = models.Update(&user, "name=?", whereData, "password")
 	if helper.Error(err) {
 		go models.Delete(&user, "", whereData)
 		this.SetReturnData(helper.SQL_ERROR, "注册失败", err.Error())
@@ -86,11 +87,22 @@ func (this *AuthController) Login() {
 	user.Token = helper.Md5(time.Now().String() + user.Name)
 
 	var whereData []interface{}
+	whereData = append(whereData, user.Name)
 
-	err = models.Update(&user, "", whereData, "token")
+	err = models.Update(&user, "name=?", whereData, "token")
 	if helper.Error(err) {
 		this.SetReturnData(helper.SQL_ERROR, "登录失败", err.Error())
 	}
 	user.Password = ""
+
+	//每次登陆，都应该断掉之前的链接，否则会发给之前的链接
+	//go func() {
+	//	helper.Debug("断掉之前的链接 ->", user.Name)
+	//	has, u := ws.HasMember(user.Id)
+	//	if has {
+	//		u.Conn.Close()
+	//	}
+	//}()
+
 	this.SetReturnData(helper.SUCCESS, "登录成功", user)
 }

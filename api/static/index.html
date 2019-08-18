@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="./jquery.min.js"></script>
+    <!-- 开发环境版本，包含了有帮助的命令行警告 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <style>
+        .el-form, .el-input {
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app">
+
+    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+        <h1>登陆</h1>
+        <el-form-item label="账号" prop="pass">
+            <el-input type="test" v-model="rule_form.name" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="密码" prop="checkPass">
+            <el-input type="password" v-model="rule_form.password" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="login">登陆</el-button>
+        </el-form-item>
+    </el-form>
+
+    <div v-if="user">{{user}}</div>
+
+    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+        <h1>webscoket</h1>
+        <el-form-item label="房间名/信息" prop="pass">
+            <el-input type="test" v-model="msg" autocomplete="off"></el-input>
+        </el-form-item>
+        <el-form-item>
+            <el-button type="primary" @click="createRoom">create</el-button>
+        </el-form-item>
+    </el-form>
+
+    <h1>房间列表</h1>
+    <el-card class="box-card" v-for="(item,index) in all_room" :key="index" class="text item">
+
+        <div>
+            {{item}}
+        </div>
+
+        <span v-if="isInRoom(item.member)">
+            <input :id="item.id" value="灰灰好帅"/>
+            <el-button type="primary" @click="sendMsg(item.id)">send</el-button>
+        </span>
+        <span v-else>
+            <el-button type="primary" @click="joinRoom(item.id)">join</el-button>
+        </span>
+
+
+    </el-card>
+
+</div>
+
+
+<script>
+
+    EVENT_HAND = 10
+    EVENT_CREATE = 11
+    EVENT_JOIN = 12
+    EVENT_LEAVE = 13
+    EVENT_MESSAGE = 14
+
+
+    let app = new Vue({
+        el: '#app',
+        data() {
+            return {
+                msg: "",
+                websock: null,
+                ws_data: {
+                    event_type: 0,
+                    room: {
+                        id: "",
+                        name: "",
+                        user_type: 0
+                    },
+                    msg: ""
+                },
+                rule_form: {
+                    name: "111",
+                    password: "111"
+                },
+                user: null,
+                all_room: []
+            }
+        },
+
+        destroyed: function () {
+            //页面销毁时关闭长连接
+            this.websocketClose();
+        },
+
+        methods: {
+            init() {
+                this.getAllRoom()
+            },
+
+            initWebSocket() { //初始化weosocket
+
+                console.log("初始化weosocket")
+                const ws_url = 'ws://' + window.location.host + '/v1/room/hand?token=' + this.user.token
+                this.websock = new WebSocket(ws_url);
+                this.websock.onopen = this.websocketOnOpen;
+                this.websock.onerror = this.websocketOnError;
+                this.websock.onmessage = this.websocketOnMessage;
+                this.websock.onclose = this.websocketClose;
+            },
+
+            websocketOnOpen() {
+                console.log("WebSocket连接成功");
+                this.ws_data.msg = "握手测试"
+                this.ws_data.event_type = EVENT_HAND
+                this.websocketSend(JSON.stringify(this.ws_data));
+            },
+            websocketOnError(e) { //错误
+                console.log("WebSocket连接发生错误");
+            },
+            websocketOnMessage(event) { //数据接收
+                let data = JSON.parse(event.data);
+
+                switch (data.event_type) {
+                    case EVENT_HAND:
+                        console.log("握手成功", data)
+                        this.init()
+                        break
+                    case EVENT_CREATE:
+                        this.ws_data = data
+                        console.log("创建成功", data)
+                        this.getAllRoom()
+                        break
+                    case EVENT_JOIN:
+                        console.log("加入成功", data)
+                        this.$message(data.msg);
+                        this.getAllRoom()
+                        break
+                    case EVENT_MESSAGE:
+                        console.log("收到消息", data)
+                        this.$message(data.msg);
+                        break
+                    default:
+                        console.log("不知道是啥", data)
+                }
+            },
+
+            websocketSend(agentData) {//数据发送
+                this.websock.send(agentData);
+            },
+
+            websocketClose(e) { //关闭
+                console.log("connection closed (" + e.code + ")");
+                this.initWebSocket()
+            },
+            createRoom() {
+                if (this.msg) {
+                    this.ws_data.event_type = EVENT_CREATE;
+                    this.ws_data.msg = "创建房间"
+                    this.ws_data.room.name = this.msg
+                    console.log(this.ws_data)
+                    this.websocketSend(JSON.stringify(this.ws_data));
+                } else {
+                    alert("xxx")
+                }
+            },
+            joinRoom(room_id) {
+                this.ws_data.room.id = room_id
+                this.ws_data.msg = "请求加入"
+                this.ws_data.event_type = EVENT_JOIN
+                this.websocketSend(JSON.stringify(this.ws_data));
+            },
+            sendMsg(room_id) {
+                let msg = $("#" + room_id).val()
+                if (msg) {
+                    console.log("this.ws_data --", this.ws_data)
+                    this.ws_data.room.id = room_id
+                    this.ws_data.msg = msg
+                    this.ws_data.event_type = EVENT_MESSAGE
+                    this.websocketSend(JSON.stringify(this.ws_data));
+                } else {
+                    alert("xxx")
+                }
+            },
+            login() {
+                let that = this
+                $.ajax({
+                    type: "POST",
+                    url: "/v1/auth/login",
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(this.rule_form),
+                    dataType: "json",
+                    success: function (res) {
+                        console.log(res)
+                        if (res.Result == 10000) {
+                            that.user = res.Data
+                            that.initWebSocket()
+                        } else {
+                            that.$message.error(res.Message);
+                        }
+                    },
+                    error: function (res) {
+                        console.error(res)
+                    }
+                });
+            },
+            getAllRoom() {
+                let that = this
+                $.ajax({
+                    type: "GET",
+                    url: "/v1/room/get_all_room?token=" + that.user.token,
+                    contentType: "application/json; charset=utf-8",
+                    success: function (res) {
+                        console.log(res)
+                        if (res.Result == 10000) {
+                            that.all_room = res.Data
+                        } else {
+                            that.$message.error(res.Message);
+                        }
+                    },
+                    error: function (res) {
+                        console.error(res)
+                    }
+                });
+            },
+            isInRoom(Member) {
+                let that = this
+                let u = Member.find((m) => {
+                    console.log(m, that.user)
+                    return m.user_id == that.user.uid
+                });
+
+                return u || ""
+            }
+        },
+    })
+
+</script>
+
+</body>
+</html>
