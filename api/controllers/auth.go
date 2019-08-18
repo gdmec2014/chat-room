@@ -23,6 +23,8 @@ type AuthController struct {
 func (this *AuthController) Register() {
 	user := models.User{}
 	this.GetPostDataNotStop(&user)
+	user.WxId = "gdmec_" + helper.GetRandomString(12)
+	helper.Debug(user)
 	this.NeedPostData(user.Name, user.Password, user.RePassword)
 	if user.Password != user.RePassword {
 		this.SetReturnData(helper.REPASSWORD_FAIELD, "两次密码不一致", nil)

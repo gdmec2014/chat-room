@@ -19,7 +19,7 @@ const SQL_ERROR Status = 50000
 const (
 	_                 Status = iota + 19999
 	PARAMETER_ERROR    //20000 参数错误
-	DEFAULT_FIELD      //20001 默认参数不能修改
+	DEFAULT_FAIELD     //20001 默认参数不能修改
 	EXIST_FAILED       //20002 数据已存在
 	REPASSWORD_FAIELD  //20003 两次密码不一致
 	PASSWORD_ERROR     //20004 密码错误
