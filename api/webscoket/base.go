@@ -1,10 +1,9 @@
 package webscoket
 
 import (
+	"chat-room/api/controllers"
 	"chat-room/api/helper"
 	"encoding/json"
-
-	"chat-room/api/controllers"
 
 	"github.com/gorilla/websocket"
 )
@@ -14,30 +13,7 @@ type WebSocketController struct {
 	controllers.NeedLoginController
 }
 
-// 广播消息
-func broadcastWebSocket(event Event) {
-
-	data, err := json.Marshal(event)
-	if helper.Error(err) {
-		helper.Error("broadcastWebSocket 发生错误，不能发送消息")
-		return
-	}
-
-	subscriber := getRoomUsers(event.RoomId)
-
-	for _, sub := range subscriber {
-		ws := sub.Conn
-		if ws != nil {
-			if ws.WriteMessage(websocket.TextMessage, data) != nil {
-				//发生错误，这里应该作重连机制
-				//但我不想，直接断了他
-				unsubscribe <- sub.User.Id
-			}
-		}
-	}
-}
-
-func (this *WebSocketController) join(roomId string, userType UserType) {
+func (this *WebSocketController) join() {
 	// 开启链接
 	ws, err := websocket.Upgrade(this.Ctx.ResponseWriter, this.Ctx.Request, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
@@ -47,8 +23,8 @@ func (this *WebSocketController) join(roomId string, userType UserType) {
 	}
 
 	// 加入房间
-	Join(this.User, ws, roomId, userType)
-	defer Leave(this.User.Id)
+	this.User.Conn = ws
+	updateUserConn(this.User)
 
 	// 轮询读取消息
 	for {
@@ -56,6 +32,45 @@ func (this *WebSocketController) join(roomId string, userType UserType) {
 		if err != nil {
 			return
 		}
-		publish <- newEvent(EVENT_MESSAGE, this.User, string(p), roomId)
+		if len(p) > 3 {
+			var m Event
+			msg := string(p)
+			helper.Debug("msg --- ", msg)
+			err := json.Unmarshal([]byte(msg), &m)
+			if err == nil {
+				switch m.EventType {
+				case EVENT_CREATE:
+					if len(m.Room.Name) < 1 {
+						m.EventType = EVENT_INVAILD
+						m.Msg = "你需要输入房间名字才能创建喔"
+						publish <- m
+						return
+					}
+					roomId := helper.GetRandomString(16)
+					Create(this.User, roomId, m.Room.Name)
+					break
+				case EVENT_JOIN:
+					Join(this.User, m.Room.Id)
+					break
+				case EVENT_MESSAGE:
+					publish <- m
+					break
+				default:
+					//握手
+					member := Member{
+						UserType: 0,
+						UserId:   this.User.Id,
+						UserName: this.User.Name,
+					}
+					helper.Debug("当前用户:", member)
+					ms := make([]Member,0)
+					ms = append(ms,member)
+					m.Room.Member = ms
+					m.EventType = EVENT_HAND
+					m.Msg = "她想握手"
+					publish <- m
+				}
+			}
+		}
 	}
 }

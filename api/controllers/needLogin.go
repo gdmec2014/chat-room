@@ -18,12 +18,18 @@ func (this *NeedLoginController)Prepare()  {
 
 func (this *NeedLoginController) checkLogin() (user models.User) {
 	Token := this.Ctx.Input.Header("Authorization")
+	if len(Token) < 1 {
+		Token = this.GetString("token")
+	}
 	helper.Debug("Token :", Token)
 	if len(Token) != 32 {
 		this.SetReturnData(helper.TOKEN_ERROR, "no token", nil)
 	}
 	user = models.User{Token:Token}
-	has, _, err := models.GetUserByToken(&user)
+	has, user , err := models.GetUserByToken(&user)
+
+	helper.Debug(user)
+
 	if helper.Error(err) {
 		this.SetReturnData(helper.FAILED, err.Error(), err)
 	}

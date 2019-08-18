@@ -17,6 +17,10 @@
 # dev
 
     bee run -downdoc=true -gendoc=true
+    
+>若出现卡住了
+
+    bee generate docs //可查看错误
 
 # build
 

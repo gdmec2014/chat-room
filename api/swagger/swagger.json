@@ -87,20 +87,20 @@
                 }
             }
         },
-        "/room/create": {
-            "post": {
+        "/room/get_all_room": {
+            "get": {
                 "tags": [
                     "room"
                 ],
-                "description": "创建房间",
-                "operationId": "WebSocketController.创建房间",
+                "description": "获取房间成员",
+                "operationId": "WebSocketController.获取全部房间",
                 "parameters": [
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "房间名字",
+                        "description": "房间ID",
                         "schema": {
-                            "$ref": "#/definitions/Room"
+                            "$ref": "#/definitions/.Room"
                         }
                     }
                 ],
@@ -118,7 +118,7 @@
             }
         },
         "/room/get_room_member": {
-            "post": {
+            "get": {
                 "tags": [
                     "room"
                 ],
@@ -130,7 +130,7 @@
                         "name": "body",
                         "description": "房间ID",
                         "schema": {
-                            "$ref": "#/definitions/Room"
+                            "$ref": "#/definitions/.Room"
                         }
                     }
                 ],
@@ -147,20 +147,20 @@
                 }
             }
         },
-        "/room/join": {
-            "post": {
+        "/room/hand": {
+            "get": {
                 "tags": [
                     "room"
                 ],
-                "description": "加入房间",
-                "operationId": "WebSocketController.加入房间",
+                "description": "握手",
+                "operationId": "WebSocketController.握手",
                 "parameters": [
                     {
                         "in": "body",
                         "name": "body",
-                        "description": "房间ID",
+                        "description": "啊啊啊",
                         "schema": {
-                            "$ref": "#/definitions/Room"
+                            "$ref": "#/definitions/.Room"
                         }
                     }
                 ],
@@ -209,12 +209,10 @@
         }
     },
     "definitions": {
-        "989.0xc00026b590.false": {
-            "title": "false",
+        ".Room": {
             "type": "object"
         },
-        "Room": {
-            "title": "Room",
+        ".false": {
             "type": "object"
         },
         "helper.RestfulReturn": {
@@ -222,7 +220,7 @@
             "type": "object",
             "properties": {
                 "Data": {
-                    "$ref": "#/definitions/989.0xc00026b590.false"
+                    "$ref": "#/definitions/989.0x11db3200.false"
                 },
                 "Message": {
                     "type": "string"
@@ -233,14 +231,7 @@
             }
         },
         "helper.Status": {
-            "title": "Status",
-            "format": "int64",
-            "type": "integer",
-            "enum": [
-                "SUCCESS = 10000",
-                "SQL_ERROR = 50000"
-            ],
-            "example": 10000
+            "type": "object"
         },
         "models.User": {
             "title": "User",
@@ -251,11 +242,11 @@
                 },
                 "delete_time": {
                     "type": "string",
-                    "format": "datetime"
+                    "format": "string"
                 },
                 "last_login": {
                     "type": "string",
-                    "format": "datetime"
+                    "format": "string"
                 },
                 "name": {
                     "type": "string"
