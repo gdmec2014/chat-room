@@ -23,6 +23,22 @@ func init() {
 			MethodParams: param.Make(),
 			Params: nil})
 
+	beego.GlobalControllerRouter["chat-room/api/controllers:QiniuController"] = append(beego.GlobalControllerRouter["chat-room/api/controllers:QiniuController"],
+		beego.ControllerComments{
+			Method: "UptokenKey",
+			Router: `/uptoken_key`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
+	beego.GlobalControllerRouter["chat-room/api/controllers:QiniuController"] = append(beego.GlobalControllerRouter["chat-room/api/controllers:QiniuController"],
+		beego.ControllerComments{
+			Method: "UptokenWeb",
+			Router: `/uptoken_web`,
+			AllowHTTPMethods: []string{"get"},
+			MethodParams: param.Make(),
+			Params: nil})
+
 	beego.GlobalControllerRouter["chat-room/api/controllers:UserController"] = append(beego.GlobalControllerRouter["chat-room/api/controllers:UserController"],
 		beego.ControllerComments{
 			Method: "UpdateAvatar",
