@@ -25,6 +25,7 @@
         </el-form-item>
         <el-form-item class="submit-item">
           <el-button type="primary" @click="login()">登录</el-button>
+          <router-link to="register" class="el-button el-button--success">去注册</router-link>
         </el-form-item>
       </el-form>
     </el-card>

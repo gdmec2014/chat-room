@@ -33,6 +33,7 @@
         </el-form-item>
         <el-form-item class="submit-item">
           <el-button type="primary" @click="register()">提交</el-button>
+          <router-link to="login" class="el-button el-button--success">去登录</router-link>
         </el-form-item>
       </el-form>
     </el-card>
