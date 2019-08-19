@@ -92,18 +92,8 @@
                 "tags": [
                     "room"
                 ],
-                "description": "获取房间成员",
+                "description": "获取全部房间",
                 "operationId": "WebSocketController.获取全部房间",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "房间ID",
-                        "schema": {
-                            "$ref": "#/definitions/.Room"
-                        }
-                    }
-                ],
                 "responses": {
                     "helper.SQL_ERROR": {
                         "description": "{object} helper.RestfulReturn"
@@ -130,7 +120,7 @@
                         "name": "body",
                         "description": "房间ID",
                         "schema": {
-                            "$ref": "#/definitions/.Room"
+                            "$ref": "#/definitions/Room"
                         }
                     }
                 ],
@@ -160,7 +150,7 @@
                         "name": "body",
                         "description": "啊啊啊",
                         "schema": {
-                            "$ref": "#/definitions/.Room"
+                            "$ref": "#/definitions/Room"
                         }
                     }
                 ],
@@ -209,10 +199,12 @@
         }
     },
     "definitions": {
-        ".Room": {
+        "989.0xc00028c060.false": {
+            "title": "false",
             "type": "object"
         },
-        ".false": {
+        "Room": {
+            "title": "Room",
             "type": "object"
         },
         "helper.RestfulReturn": {
@@ -220,7 +212,7 @@
             "type": "object",
             "properties": {
                 "Data": {
-                    "$ref": "#/definitions/989.0x11db3200.false"
+                    "$ref": "#/definitions/989.0xc00028c060.false"
                 },
                 "Message": {
                     "type": "string"
@@ -231,7 +223,14 @@
             }
         },
         "helper.Status": {
-            "type": "object"
+            "title": "Status",
+            "format": "int64",
+            "type": "integer",
+            "enum": [
+                "SUCCESS = 10000",
+                "SQL_ERROR = 50000"
+            ],
+            "example": 10000
         },
         "models.User": {
             "title": "User",
@@ -240,13 +239,16 @@
                 "avatar": {
                     "type": "string"
                 },
+                "conn": {
+                    "$ref": "#/definitions/websocket.Conn"
+                },
                 "delete_time": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "last_login": {
                     "type": "string",
-                    "format": "string"
+                    "format": "datetime"
                 },
                 "name": {
                     "type": "string"
@@ -268,6 +270,10 @@
                     "type": "string"
                 }
             }
+        },
+        "websocket.Conn": {
+            "title": "Conn",
+            "type": "object"
         }
     },
     "tags": [

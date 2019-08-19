@@ -4,6 +4,8 @@ import (
 	"chat-room/api/helper"
 	"chat-room/api/models"
 	"container/list"
+	"encoding/json"
+	"time"
 )
 
 //TODO webscoket 数据处理
@@ -36,7 +38,16 @@ var (
 	YouPerformIGuess *youPerformIGuess = new(youPerformIGuess) // 配置
 )
 
+//初始化
+func init() {
+	YouPerformIGuess.MaxNumber = models.GetAppConfInt("youPerformIGuess::maxNumber")
+	if YouPerformIGuess.MaxNumber < 1 {
+		YouPerformIGuess.MaxNumber = 6
+	}
+}
+
 func addRooms(room Room) {
+	go updateRedisRooms(room)
 	allRooms.PushBack(room)
 }
 
@@ -46,6 +57,8 @@ func addUser(user models.User) {
 
 //更新房间成员
 func updateRoomsMember(roomId, roomName string, member Member) Room {
+
+	go updateRedisRoomsMember(roomId, roomName, member)
 
 	newMember := make([]Member, 0)
 	newMember = append(newMember, member)
@@ -61,7 +74,7 @@ func updateRoomsMember(roomId, roomName string, member Member) Room {
 			for _, m := range r.Value.(Room).Member {
 				if m.UserId != member.UserId {
 					has = true
-					newMember = append(newMember,m)
+					newMember = append(newMember, m)
 				}
 			}
 			newRoom = Room{
@@ -106,14 +119,6 @@ func updateUserConn(user models.User) {
 	if !has {
 		helper.Debug("不存在用户，新加")
 		addUser(user)
-	}
-}
-
-//初始化
-func init() {
-	YouPerformIGuess.MaxNumber = models.GetAppConfInt("youPerformIGuess::maxNumber")
-	if YouPerformIGuess.MaxNumber < 1 {
-		YouPerformIGuess.MaxNumber = 6
 	}
 }
 
@@ -177,5 +182,44 @@ func hasMember(id int64) (has bool, user models.User) {
 		}
 	}
 
+	return
+}
+
+//use redis
+func updateRedisRooms(room Room) {
+	//保存在总的房间
+	if !IsInSet("room", room.Id) {
+		SetSAdd("room", room.Id)
+	}
+	//房间信息
+	roomData := make(map[string]interface{})
+	roomData["Name"] = room.Name
+	roomData["TimeUnix"] = time.Now().Unix()
+	SetMap(room.Id, roomData)
+	//成员
+	for _, rm := range room.Member {
+		//保证唯一
+		bm, err := json.Marshal(&rm)
+		if helper.Error(err) {
+			continue
+		}
+		if IsInSet(room.Id+"_member", string(bm)) {
+			DelSet(room.Id+"_member", string(bm))
+		}
+		SetSAdd(room.Id+"_member", string(bm))
+	}
+}
+
+//更新房间成员
+func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) {
+	bm, err := json.Marshal(&member)
+	if helper.Error(err) {
+		return
+	}
+	if IsInSet(roomId+"_member", string(bm)) {
+		DelSet(room.Id+"_member", string(bm))
+	}
+	SetSAdd(roomId+"_member", string(bm))
+	GetSet(roomId + "_member")
 	return
 }

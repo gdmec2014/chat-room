@@ -11,22 +11,24 @@ import (
 //TODO webscoket 房间事件处理
 
 type Room struct {
-	Id     string   `json:"id"`
-	Name   string   `json:"name"`
-	Member []Member `json:"member"`
+	Id       string   `json:"id"`
+	Name     string   `json:"name"`
+	Member   []Member `json:"member"`
+	TimeUnix int64    `json:"time_unix"` //创建时间
 }
 
 type Member struct {
 	UserType UserType `json:"user_type"` // 用户类型跟房间，因为不是每一个房间的身份都一样
-	UserId   int64    `json:"user_id"`   //用户ID
-	UserName string   `json:"user_name"` //用户名
+	UserId   int64    `json:"user_id"`   // 用户ID
+	UserName string   `json:"user_name"` // 用户名
 }
 
 type Event struct {
-	EventType EventType `json:"event_type"` // 消息类型
-	Room      Room      `json:"room"`       // 房间
-	Msg       string    `json:"msg"`        // 消息
-	TimeUnix  int64     `json:"time_unix"`  // 消息时间戳
+	EventType EventType   `json:"event_type"` // 消息类型
+	Room      Room        `json:"room"`       // 房间
+	Msg       string      `json:"msg"`        // 消息
+	TimeUnix  int64       `json:"time_unix"`  // 消息时间戳
+	Data      interface{} `json:"data"`       //附带数据
 }
 
 var (
@@ -139,13 +141,13 @@ func broadcastWebSocket(event Event) {
 		member = getAllMember()
 		break
 	case EVENT_HAND:
-		helper.Debug("新建房间，握手，需要发送数据给自己 -> ",event.Room.Member[0].UserId)
+		helper.Debug("新建房间，握手，需要发送数据给自己 -> ", event.Room.Member[0].UserId)
 		//新建房间，握手，需要发送数据给自己
 		if len(event.Room.Member) > 0 {
 			var has bool
 			has, u := hasMember(event.Room.Member[0].UserId)
 			if has {
-				member = append(member,u)
+				member = append(member, u)
 			} else {
 				helper.Error("broadcastWebSocket 发生错误，用户数据丢失")
 				return
@@ -162,7 +164,7 @@ func broadcastWebSocket(event Event) {
 		}
 	}
 
-	helper.Debug("member -- ",member)
+	helper.Debug("member -- ", member)
 
 	for _, m := range member {
 		ws := m.Conn
