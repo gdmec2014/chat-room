@@ -2,13 +2,15 @@ package webscoket
 
 import (
 	"chat-room/api/helper"
-	"fmt"
+	"encoding/json"
+	"github.com/astaxie/beego"
 	"github.com/go-redis/redis"
 )
 
 var RidesClient *redis.Client
 
 func init() {
+	helper.Debug("init RidesClient")
 	RidesClient = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
@@ -16,20 +18,35 @@ func init() {
 	})
 
 	pong, err := RidesClient.Ping().Result()
-	fmt.Println(pong, err)
-	GetSet("room")
+	if helper.Error(err) {
+		helper.Error("init redis failed")
+	}
+	beego.Info(pong)
 }
 
 func SetMap(name string, data map[string]interface{}) {
 	RidesClient.HMSet(name, data)
 }
 
-func SetSAdd(name string, data ...interface{}) {
-	RidesClient.SAdd(name, data)
+func SetSAdd(name string, data ...interface{}) (err error) {
+	r := RidesClient.SAdd(name, data...)
+	err = r.Err()
+	helper.Error(err)
+	return
 }
 
-func GetSet(name string) {
-	helper.Debug("GetSet : ",RidesClient.SMembers(name))
+func GetSet(name string, data interface{}) {
+	r := RidesClient.SMembers(name)
+	switch data.(type) {
+	case *[]string:
+		d := r.Val()
+		bd, _ := json.Marshal(&d)
+		json.Unmarshal(bd, &data)
+		break
+	case *Room:
+
+		break
+	}
 }
 
 func IsInSet(name string, data interface{}) bool {

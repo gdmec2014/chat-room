@@ -187,10 +187,14 @@ func hasMember(id int64) (has bool, user models.User) {
 
 //use redis
 func updateRedisRooms(room Room) {
+	helper.Debug("updateRedisRooms --- ", room)
 	//保存在总的房间
 	if !IsInSet("room", room.Id) {
+		helper.Debug("设置 哦哦哦哦哦")
 		SetSAdd("room", room.Id)
 	}
+	var oldRoom Room
+	GetSet("room", &oldRoom)
 	//房间信息
 	roomData := make(map[string]interface{})
 	roomData["Name"] = room.Name
@@ -212,14 +216,11 @@ func updateRedisRooms(room Room) {
 
 //更新房间成员
 func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) {
-	bm, err := json.Marshal(&member)
-	if helper.Error(err) {
-		return
+	if IsInSet(roomId+"_member", member) {
+		DelSet(room.Id+"_member", member)
 	}
-	if IsInSet(roomId+"_member", string(bm)) {
-		DelSet(room.Id+"_member", string(bm))
-	}
-	SetSAdd(roomId+"_member", string(bm))
-	GetSet(roomId + "_member")
+	SetSAdd(roomId+"_member", member)
+	var oldMember Member
+	GetSet(roomId+"_member", &oldMember)
 	return
 }
