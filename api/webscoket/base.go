@@ -58,6 +58,19 @@ func (this *WebSocketController) join() {
 					m.Data = this.User
 					publish <- m
 					break
+				case EVENT_DRAW:
+					data := make(map[string]interface{})
+					data["user"] = this.User
+					data["position"] = m.Data
+					m.Data = data
+					publish <- m
+					break
+				case EVENT_BREAK_DRAW:
+					data := make(map[string]interface{})
+					data["user"] = this.User
+					m.Data = data
+					publish <- m
+					break
 				default:
 					//握手
 					member := Member{

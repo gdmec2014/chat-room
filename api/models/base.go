@@ -21,6 +21,7 @@ var (
 )
 
 var (
+	Redis        *redis = new(redis)
 	App          *app   = new(app)
 	QiNiu        *qiniu = new(qiniu)
 	DefaultAdmin *admin = new(admin)
@@ -53,7 +54,13 @@ type admin struct {
 	PassWord string
 }
 
+type redis struct {
+	Enable            bool
+}
+
 func init() {
+
+	Redis.Enable = true
 
 	DBOk = false
 

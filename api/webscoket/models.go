@@ -14,12 +14,14 @@ import (
 type EventType int
 
 const (
-	EVENT_HAND    = 10 //握手事件
-	EVENT_CREATE  = 11 //创房事件
-	EVENT_JOIN    = 12 //加房事件
-	EVENT_LEAVE   = 13 //离线事件
-	EVENT_MESSAGE = 14 //消息事件
-	EVENT_INVAILD = 15 //无效事件
+	EVENT_HAND       = 10 //握手事件
+	EVENT_CREATE     = 11 //创房事件
+	EVENT_JOIN       = 12 //加房事件
+	EVENT_LEAVE      = 13 //离线事件
+	EVENT_MESSAGE    = 14 //消息事件
+	EVENT_INVAILD    = 15 //无效事件
+	EVENT_DRAW       = 16 //绘图事件
+	EVENT_BREAK_DRAW = 17 //中断绘画事件
 )
 
 type UserType int
@@ -55,7 +57,7 @@ func InitData() {
 		go func(i int) {
 			var room Room
 			redisRoomId := redisRoomsId[i]
-			redisRoomId = strings.Replace(redisRoomId,"\"","",-1)
+			redisRoomId = strings.Replace(redisRoomId, "\"", "", -1)
 			helper.Debug("InitData redisRoomId", redisRoomId)
 			if len(redisRoomId) < 1 {
 				DelSet("room", redisRoomId)
@@ -253,9 +255,11 @@ func updateRedisRooms(room Room) {
 		SetSAdd("room", room.Id)
 	}
 
-	var rs []string //测试
-	GetSet("room",&rs) //测试
-	helper.Debug("updateRedisRooms get rooms", rs) //测试
+	if helper.IsDebug {
+		var rs []string                                //测试
+		GetSet("room", &rs)                            //测试
+		helper.Debug("updateRedisRooms get rooms", rs) //测试
+	}
 
 	//房间信息
 	roomData := make(map[string]interface{})
@@ -265,8 +269,9 @@ func updateRedisRooms(room Room) {
 
 	SetMap(room.Id, roomData)
 
-	GetMap(room.Id) //测试
-
+	if helper.IsDebug {
+		GetMap(room.Id) //测试
+	}
 	//成员
 	for _, rm := range room.Member {
 		//保证唯一
@@ -276,9 +281,11 @@ func updateRedisRooms(room Room) {
 		SetSAdd(room.Id+"_member", rm)
 	}
 
-	var member []Member  //测试
-	GetSet(room.Id+"_member",&member) //测试
-	helper.Debug("updateRedisRooms get room  member :",member) //测试
+	if helper.IsDebug {
+		var member []Member                                         //测试
+		GetSet(room.Id+"_member", &member)                          //测试
+		helper.Debug("updateRedisRooms get room  member :", member) //测试
+	}
 }
 
 //更新房间成员

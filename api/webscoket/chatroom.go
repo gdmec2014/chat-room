@@ -114,6 +114,14 @@ func chatRoom() {
 			case EVENT_MESSAGE:
 				helper.Debug("发送信息")
 				break
+			case EVENT_DRAW:
+				event.Msg = "啊！请接收绘图"
+				helper.Debug("绘图")
+				break
+			case EVENT_BREAK_DRAW:
+				event.Msg = "啊！请中断绘图"
+				helper.Debug("中断绘图")
+				break
 			default:
 				//握手时候，没有房间号
 				helper.Debug("假装握手")
@@ -162,13 +170,12 @@ func broadcastWebSocket(event Event) {
 		room = getRoom(event.Room.Id)
 		if len(room.Member) > 0 {
 			member = getMemberByRoom(room)
+			helper.Debug("member -- ",member)
 		} else {
 			//已经没有用户了，应该销毁他
 			return
 		}
 	}
-
-	helper.Debug("member -- ", member)
 
 	for _, m := range member {
 		ws := m.Conn
