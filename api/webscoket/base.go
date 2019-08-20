@@ -14,6 +14,7 @@ type WebSocketController struct {
 }
 
 func (this *WebSocketController) join() {
+
 	// 开启链接
 	ws, err := websocket.Upgrade(this.Ctx.ResponseWriter, this.Ctx.Request, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {
@@ -53,6 +54,8 @@ func (this *WebSocketController) join() {
 					Join(this.User, m.Room.Id)
 					break
 				case EVENT_MESSAGE:
+					this.User.Token = ""
+					m.Data = this.User
 					publish <- m
 					break
 				default:

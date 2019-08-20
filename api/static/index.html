@@ -14,51 +14,85 @@
         .el-form, .el-input {
             max-width: 500px;
         }
+
+        .right {
+            float: right;
+        }
+
+        .left {
+            float: left;
+        }
     </style>
 </head>
 <body>
 
 <div id="app">
 
-    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+    <div v-if="!in_room">
+        <el-form v-if="!user" :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+            <el-form-item label="账号" prop="pass">
+                <el-input type="test" v-model="rule_form.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="checkPass">
+                <el-input type="password" v-model="rule_form.password" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="login">登陆</el-button>
+            </el-form-item>
+        </el-form>
+        <el-form v-if="user" :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+            <el-form-item label="123" prop="pass">
+                <el-input type="test" v-model="msg" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="createRoom">create</el-button>
+            </el-form-item>
+        </el-form>
 
-        <el-form-item label="账号" prop="pass">
-            <el-input type="test" v-model="rule_form.name" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="checkPass">
-            <el-input type="password" v-model="rule_form.password" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item>
-            <el-button type="primary" @click="login">登陆</el-button>
-        </el-form-item>
-    </el-form>
+        <el-row :gutter="20">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6" v-for="(item,index) in all_room" :key="index"
+                    class="text item">
+                <el-card>
+                    <div>
+                        {{item.name}}
+                    </div>
+                    <span v-if="isInRoom(item.member)">
+                        <el-button type="primary" @click="openRoom(item.id)">join</el-button>
+                    </span>
+                    <span v-else>
+                        <el-button type="primary" @click="joinRoom(item.id)">join</el-button>
+                    </span>
+                </el-card>
+            </el-col>
+        </el-row>
+
+    </div>
 
 
-    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
-        <el-form-item label="房间名/信息" prop="pass">
-            <el-input type="test" v-model="msg" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item>
-            <el-button type="primary" @click="createRoom">create</el-button>
-        </el-form-item>
-    </el-form>
-
-
-    <el-card class="box-card" v-for="(item,index) in all_room" :key="index" class="text item">
-
-        <div>
-            {{item}}
+    <el-card v-else>
+        <div slot="header" class="clearfix">
+            <el-button style="float: left; padding: 3px 5px" type="text" @click="in_room=false">返回</el-button>
         </div>
 
-        <span v-if="isInRoom(item.member)">
-            <input :id="item.id" value="灰灰好帅"/>
-            <el-button type="primary" @click="sendMsg(item.id)">send</el-button>
-        </span>
-        <span v-else>
-            <el-button type="primary" @click="joinRoom(item.id)">join</el-button>
-        </span>
+        <div style="min-height: 10rem">
 
+            <el-row>
+                <el-col v-for="(item,index) in room_msg" style="width: 100%" :span="24">
+                    <div v-bind:class="[item.uid == user.uid ? 'right' : 'left']">
 
+                        <p>
+                            {{item.msg}}
+                        </p>
+                    </div>
+
+                </el-col>
+            </el-row>
+        </div>
+
+        <div>
+            <el-input type="textarea" v-model="ws_data.msg"></el-input>
+            <el-button type="primary" @click="sendMsg" style="float: right;margin: 2rem">send</el-button>
+        </div>
     </el-card>
 
 </div>
@@ -72,11 +106,17 @@
     EVENT_LEAVE = 13
     EVENT_MESSAGE = 14
 
-
     let app = new Vue({
         el: '#app',
         data() {
             return {
+                room_msg: [],
+                in_room: false,
+                open_room_data: {
+                    id: "",
+                    name: "",
+                    user_type: 0
+                },
                 msg: "",
                 websock: null,
                 ws_data: {
@@ -102,7 +142,39 @@
             this.websocketClose();
         },
 
+        mounted() {
+            this.updateUser()
+        },
+
         methods: {
+            updateUser() {
+                let that = this
+                let token = localStorage.getItem("token")
+                if (token) {
+                    //更新用戶信息
+                    $.ajax({
+                        type: "GET",
+                        url: "/api/getuserbytoken?token=" + token,
+                        contentType: "application/json; charset=utf-8",
+                        success: function (res) {
+                            console.log(res)
+                            if (res.Result == 10000) {
+                                that.user = res.Data
+                                that.initWebSocket()
+                                that.getAllRoom()
+                            } else {
+                                this.$message(res.Message);
+                            }
+                        },
+                        error: function (res) {
+                            console.error(res)
+                        }
+                    });
+                } else {
+                    this.$message("要先登陸喔~");
+                }
+
+            },
             init() {
                 this.getAllRoom()
             },
@@ -117,7 +189,6 @@
                 this.websock.onmessage = this.websocketOnMessage;
                 this.websock.onclose = this.websocketClose;
             },
-
             websocketOnOpen() {
                 console.log("WebSocket连接成功");
                 this.ws_data.msg = "握手测试"
@@ -138,7 +209,7 @@
                     case EVENT_CREATE:
                         this.ws_data = data
                         console.log("创建成功", data)
-                        this.getAllRoom()
+                        this.all_room.push(data.room)
                         break
                     case EVENT_JOIN:
                         console.log("加入成功", data)
@@ -147,17 +218,19 @@
                         break
                     case EVENT_MESSAGE:
                         console.log("收到消息", data)
-                        this.$message(data.msg);
+                        let msg = data.data
+                        msg["msg"] = data.msg
+                        console.log(msg)
+                        this.setLocalStorageMsg(msg)
                         break
                     default:
                         console.log("不知道是啥", data)
                 }
             },
-
             websocketSend(agentData) {//数据发送
                 this.websock.send(agentData);
+                this.ws_data.msg = ""
             },
-
             websocketClose(e) { //关闭
                 console.log("connection closed (" + e.code + ")");
                 this.initWebSocket()
@@ -179,16 +252,15 @@
                 this.ws_data.event_type = EVENT_JOIN
                 this.websocketSend(JSON.stringify(this.ws_data));
             },
-            sendMsg(room_id) {
-                let msg = $("#" + room_id).val()
-                if (msg) {
+            sendMsg() {
+                if (this.ws_data.msg) {
                     console.log("this.ws_data --", this.ws_data)
-                    this.ws_data.room.id = room_id
-                    this.ws_data.msg = msg
+                    this.ws_data.room.id = this.open_room_data.id
+                    this.ws_data.msg = this.ws_data.msg
                     this.ws_data.event_type = EVENT_MESSAGE
                     this.websocketSend(JSON.stringify(this.ws_data));
                 } else {
-                    alert("xxx")
+                    this.$message("要输入东西喔~");
                 }
             },
             login() {
@@ -204,6 +276,7 @@
                         if (res.Result == 10000) {
                             that.user = res.Data
                             that.initWebSocket()
+                            localStorage.setItem("token", that.user.token)
                         } else {
                             that.$message.error(res.Message);
                         }
@@ -235,11 +308,37 @@
             isInRoom(Member) {
                 let that = this
                 let u = Member.find((m) => {
-                    console.log(m, that.user)
                     return m.user_id == that.user.uid
                 });
 
                 return u || ""
+            },
+            openRoom(id) {
+                //进入房间
+                this.ws_data.msg = ""
+                this.open_room_data = this.all_room.find((r) => {
+                    return r.id == id
+                });
+                //加载历史消息
+                this.getLocalStorageMsg()
+                this.in_room = true
+            },
+            getLocalStorageMsg() {
+                this.room_msg = []
+                let msg = localStorage.getItem(this.open_room_data.id + "_msg")
+                if (msg) {
+                    this.room_msg = JSON.parse(msg)
+                }
+            },
+            setLocalStorageMsg(new_msg) {
+                let msg = localStorage.getItem(this.open_room_data.id + "_msg")
+                if (msg) {
+                    this.room_msg = JSON.parse(msg)
+                } else {
+                    this.room_msg = []
+                }
+                this.room_msg.push(new_msg)
+                localStorage.setItem(this.open_room_data.id + "_msg", JSON.stringify(this.room_msg))
             }
         },
     })

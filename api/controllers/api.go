@@ -14,3 +14,8 @@ type ApiController struct {
 func (this *ApiController) GetRunTime() {
 	this.SetReturnData(helper.SUCCESS, "love you", time.Now().Unix() - models.App.RunTime)
 }
+
+func (this *ApiController) GetUserByToken() {
+	user := this.checkLogin()
+	this.SetReturnData(helper.SUCCESS, "love you", user)
+}

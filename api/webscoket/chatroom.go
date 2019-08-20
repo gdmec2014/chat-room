@@ -25,10 +25,10 @@ type Member struct {
 
 type Event struct {
 	EventType EventType   `json:"event_type"` // 消息类型
-	Room      Room        `json:"room"`       // 房间
+	Room      Room        `json:"room"`       // 房间       //前端發來的字段
 	Msg       string      `json:"msg"`        // 消息
 	TimeUnix  int64       `json:"time_unix"`  // 消息时间戳
-	Data      interface{} `json:"data"`       //附带数据
+	Data      interface{} `json:"data"`       // 附带数据    //返回後端的字段
 }
 
 var (
@@ -50,6 +50,8 @@ func Create(user models.User, roomId, roomName string) {
 func newWS(user models.User, roomId, roomName string, eventType EventType) {
 
 	var newRoom Room
+
+	newRoom.TimeUnix = time.Now().Unix()
 	msg := "加入成功"
 
 	member := Member{
@@ -125,6 +127,8 @@ func chatRoom() {
 
 // 广播消息
 func broadcastWebSocket(event Event) {
+
+	event.TimeUnix = time.Now().Unix()
 
 	data, err := json.Marshal(event)
 	if helper.Error(err) {

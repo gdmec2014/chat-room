@@ -4,7 +4,8 @@ import (
 	"chat-room/api/helper"
 	"chat-room/api/models"
 	"container/list"
-	"encoding/json"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -43,6 +44,64 @@ func init() {
 	YouPerformIGuess.MaxNumber = models.GetAppConfInt("youPerformIGuess::maxNumber")
 	if YouPerformIGuess.MaxNumber < 1 {
 		YouPerformIGuess.MaxNumber = 6
+	}
+}
+
+func InitData() {
+	var redisRoomsId []string
+	GetSet("room", &redisRoomsId)
+	helper.Debug("InitData redisRoomsId", redisRoomsId)
+	for i, _ := range redisRoomsId {
+		go func(i int) {
+			var room Room
+			redisRoomId := redisRoomsId[i]
+			redisRoomId = strings.Replace(redisRoomId,"\"","",-1)
+			helper.Debug("InitData redisRoomId", redisRoomId)
+			if len(redisRoomId) < 1 {
+				DelSet("room", redisRoomId)
+				return
+			}
+			redisRoomMap := GetMap(redisRoomId)
+
+			helper.Debug("InitData redisRoomMap", redisRoomMap)
+
+			helper.Debug(redisRoomMap)
+			_, ok := redisRoomMap["Name"]
+			if ok {
+				if len(redisRoomMap["Name"]) < 1 {
+					DelSet("room", redisRoomId)
+					return
+				}
+				room.Name = redisRoomMap["Name"]
+			} else {
+				DelSet("room", redisRoomId)
+				return
+			}
+			helper.Debug("InitData redisRoom name", room.Name)
+			_, ok = redisRoomMap["TimeUnix"]
+			if ok {
+				timeUnix, err := strconv.ParseInt(redisRoomMap["TimeUnix"], 10, 64)
+				if helper.Error(err) {
+					timeUnix = 0
+				}
+				room.TimeUnix = timeUnix
+			} else {
+				DelSet("room", redisRoomId)
+				return
+			}
+			helper.Debug("InitData redisRoom TimeUnix", room.TimeUnix)
+			var member []Member
+			GetSet(redisRoomId+"_member", &member)
+			if len(member) < 1 {
+				//没有成员了，删除房间
+				DelSet("room", redisRoomId)
+				return
+			}
+			room.Member = member
+			room.Id = redisRoomId
+			helper.Debug("InitData redisRoom Member", room.Member)
+			allRooms.PushBack(room)
+		}(i)
 	}
 }
 
@@ -190,28 +249,36 @@ func updateRedisRooms(room Room) {
 	helper.Debug("updateRedisRooms --- ", room)
 	//保存在总的房间
 	if !IsInSet("room", room.Id) {
-		helper.Debug("设置 哦哦哦哦哦")
+		helper.Debug("updateRedisRooms set room id", room.Id)
 		SetSAdd("room", room.Id)
 	}
-	var oldRoom Room
-	GetSet("room", &oldRoom)
+
+	var rs []string //测试
+	GetSet("room",&rs) //测试
+	helper.Debug("updateRedisRooms get rooms", rs) //测试
+
 	//房间信息
 	roomData := make(map[string]interface{})
 	roomData["Name"] = room.Name
 	roomData["TimeUnix"] = time.Now().Unix()
+	helper.Debug("updateRedisRooms set room map ", roomData)
+
 	SetMap(room.Id, roomData)
+
+	GetMap(room.Id) //测试
+
 	//成员
 	for _, rm := range room.Member {
 		//保证唯一
-		bm, err := json.Marshal(&rm)
-		if helper.Error(err) {
-			continue
+		if IsInSet(room.Id+"_member", rm) {
+			DelSet(room.Id+"_member", rm)
 		}
-		if IsInSet(room.Id+"_member", string(bm)) {
-			DelSet(room.Id+"_member", string(bm))
-		}
-		SetSAdd(room.Id+"_member", string(bm))
+		SetSAdd(room.Id+"_member", rm)
 	}
+
+	var member []Member  //测试
+	GetSet(room.Id+"_member",&member) //测试
+	helper.Debug("updateRedisRooms get room  member :",member) //测试
 }
 
 //更新房间成员
@@ -220,7 +287,5 @@ func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) 
 		DelSet(room.Id+"_member", member)
 	}
 	SetSAdd(roomId+"_member", member)
-	var oldMember Member
-	GetSet(roomId+"_member", &oldMember)
 	return
 }

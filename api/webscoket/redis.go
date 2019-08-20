@@ -20,6 +20,10 @@ func init() {
 	pong, err := RidesClient.Ping().Result()
 	if helper.Error(err) {
 		helper.Error("init redis failed")
+	}else{
+		//从redis读取旧的房间数据
+		beego.Info("从redis读取旧的房间数据")
+		InitData()
 	}
 	beego.Info(pong)
 }
@@ -28,8 +32,20 @@ func SetMap(name string, data map[string]interface{}) {
 	RidesClient.HMSet(name, data)
 }
 
+func GetMap(name string) map[string]string {
+	r := RidesClient.HGetAll(name)
+	data,err := r.Result()
+	helper.Error(err)
+	helper.Debug("GetMap:",data)
+	return data
+}
+
 func SetSAdd(name string, data ...interface{}) (err error) {
-	r := RidesClient.SAdd(name, data...)
+	dataStrs := make([]interface{},0)
+	for _,str := range data {
+		dataStrs =append(dataStrs,helper.GetString(str))
+	}
+	r := RidesClient.SAdd(name, dataStrs...)
 	err = r.Err()
 	helper.Error(err)
 	return
@@ -37,20 +53,39 @@ func SetSAdd(name string, data ...interface{}) (err error) {
 
 func GetSet(name string, data interface{}) {
 	r := RidesClient.SMembers(name)
-	switch data.(type) {
-	case *[]string:
-		d := r.Val()
-		bd, _ := json.Marshal(&d)
-		json.Unmarshal(bd, &data)
-		break
-	case *Room:
+	values,err := r.Result()
+	if helper.Error(err) {
+		helper.Error("GetSet error")
+		return
+	}
 
+	helper.Debug("GetSet : ",values)
+
+	switch data.(type) {
+	case *[]Member:
+		var ms []Member
+		for _,d := range values{
+			var m = Member{}
+			err := json.Unmarshal([]byte(d),&m)
+			if helper.Error(err) {
+				continue
+			}
+			ms = append(ms,m)
+		}
+		b := helper.GetByte(ms)
+		err := json.Unmarshal(b,&data)
+		helper.Error(err)
 		break
+	case *[]string:
+		b := helper.GetByte(values)
+		err := json.Unmarshal(b,&data)
+		helper.Error(err)
 	}
 }
 
 func IsInSet(name string, data interface{}) bool {
-	isMember, err := RidesClient.SIsMember(name, data).Result()
+	dataStr := helper.GetString(data)
+	isMember, err := RidesClient.SIsMember(name, dataStr).Result()
 	helper.Error(err)
 	return isMember
 }
