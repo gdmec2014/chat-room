@@ -88,6 +88,9 @@ export default {
                 type: "success",
                 message: data.Message
               });
+              this.$router.push({
+                path: '/home'
+              })
             } else {
               that.$message({
                 type: "error",

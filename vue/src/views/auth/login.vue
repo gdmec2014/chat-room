@@ -48,7 +48,7 @@ export default {
       rules: {
         name: [
           { required: true, message: "用户名", trigger: "blur" },
-          { min: 2, max: 12, message: "请输入用户名", trigger: "blur" }
+          { message: "请输入用户名", trigger: "blur" }
         ],
         password: [
           { required: true, message: "密码", trigger: "blur" },
@@ -69,6 +69,9 @@ export default {
                 type: "success",
                 message: data.Message
               });
+              this.$router.push({
+                path: '/home'
+              })
             } else {
               that.$message({
                 type: "error",
