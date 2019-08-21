@@ -5,16 +5,19 @@ import (
 	"chat-room/api/models"
 	"encoding/json"
 	"github.com/gorilla/websocket"
+	"math/rand"
 	"time"
 )
 
 //TODO webscoket 房间事件处理
 
 type Room struct {
-	Id       string   `json:"id"`
-	Name     string   `json:"name"`
-	Member   []Member `json:"member"`
-	TimeUnix int64    `json:"time_unix"` //创建时间
+	Id            string   `json:"id"`
+	Name          string   `json:"name"`
+	Member        []Member `json:"member"`
+	TimeUnix      int64    `json:"time_unix"`      //创建时间
+	KeyWord       string   `json:"key_word"`       //当前游戏正确答案
+	CorrectNumber int      `json:"correct_number"` //当前轮游戏回答正确人数
 }
 
 type Member struct {
@@ -64,8 +67,39 @@ func newWS(user models.User, roomId, roomName string, eventType EventType) {
 	if roomId != "nil" {
 		helper.Debug("更新房间成员")
 		//更新房间成员
-		newRoom = updateRoomsMember(roomId, roomName, member)
+		var code int
+		newRoom, code = updateRoomsMember(roomId, roomName, member)
 		msg = user.Name + " 加入了房间 " + newRoom.Name
+		eventType = EVENT_NO_PLACE
+		switch code {
+		case EVENT_GAME_CAN_START:
+			//开始游戏
+			msg = "准备好了么~要开始了喔~"
+			//赋予玩家身份
+			for i, m := range newRoom.Member {
+				if i == 0 {
+					m.UserType = MASTER
+				} else {
+					m.UserType = PLAYER
+				}
+			}
+			//随机获取问题答案
+			vocabulary := models.Vocabulary
+			lenVocabulary := len(vocabulary)
+			r := rand.New(rand.NewSource(time.Now().UnixNano()))
+			key := r.Intn(lenVocabulary)
+			newRoom.KeyWord = vocabulary[key]
+			go startGame(newRoom)
+			break
+		case EVENT_GAME_NO_START:
+			//人数还不够，不可以开始喔
+			msg = "人数还不够，不可以开始喔~"
+			break
+		case EVENT_NO_PLACE:
+			//房间不能加人了
+			msg = "房间已经满人了喔！"
+			break
+		}
 	} else {
 		eventType = EVENT_INVAILD
 		msg = "无效事件"
@@ -93,9 +127,7 @@ func newWS(user models.User, roomId, roomName string, eventType EventType) {
 func chatRoom() {
 	for {
 		select {
-
 		case event := <-publish:
-
 			switch event.EventType {
 			case EVENT_HAND:
 				helper.Debug("握手")
@@ -170,7 +202,7 @@ func broadcastWebSocket(event Event) {
 		room = getRoom(event.Room.Id)
 		if len(room.Member) > 0 {
 			member = getMemberByRoom(room)
-			helper.Debug("member -- ",member)
+			helper.Debug("member -- ", member)
 		} else {
 			//已经没有用户了，应该销毁他
 			return
@@ -184,6 +216,65 @@ func broadcastWebSocket(event Event) {
 				//发生错误，这里应该作重连机制
 				ws.Close()
 			}
+		}
+	}
+}
+
+//开始游戏
+func startGame(room Room) {
+	t := 0
+	t1 := time.NewTimer(time.Second * 1)
+	event := Event{
+		EventType: 0,
+		Room:      room,
+		Msg:       "嘿嘿嘿",
+		TimeUnix:  0,
+		Data:      nil,
+	}
+	for {
+		select {
+		case <-t1.C:
+			t++
+			if t == 90 {
+				//开始新的一轮游戏啦
+				t = 0
+				//转换身份事件
+				isOver := 0 //是否应该结束游戏呢? =6 => true
+				hasMaster := false
+				for i, m := range room.Member {
+					switch m.UserType {
+					case MASTER:
+						event.Room.Member[i].UserType = NO_MASTER
+						isOver++
+						break
+					case NO_MASTER:
+						isOver++
+						break
+					case PLAYER:
+						if !hasMaster {
+							hasMaster = true
+							event.Room.Member[i].UserType = MASTER
+						}
+						break
+					}
+				}
+				if isOver > len(event.Room.Member) {
+					//中断游戏
+					event.EventType = EVENT_GAME_OVER
+					broadcastWebSocket(event)
+					break
+				} else {
+					//更新身份
+					event.EventType = EVENT_GIVE_IDENTITY
+					broadcastWebSocket(event)
+				}
+			} else {
+				//推送本轮游戏剩余时间
+				event.EventType = EVENT_GAME_TIME
+				event.Data = 90 - t
+				broadcastWebSocket(event)
+			}
+			t1.Reset(time.Second * 1)
 		}
 	}
 }

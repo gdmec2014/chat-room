@@ -14,21 +14,32 @@ import (
 type EventType int
 
 const (
-	EVENT_HAND       = 10 //握手事件
-	EVENT_CREATE     = 11 //创房事件
-	EVENT_JOIN       = 12 //加房事件
-	EVENT_LEAVE      = 13 //离线事件
-	EVENT_MESSAGE    = 14 //消息事件
-	EVENT_INVAILD    = 15 //无效事件
-	EVENT_DRAW       = 16 //绘图事件
-	EVENT_BREAK_DRAW = 17 //中断绘画事件
+	EVENT_HAND           = 10 //握手事件
+	EVENT_CREATE         = 11 //创房事件
+	EVENT_JOIN           = 12 //加房事件
+	EVENT_LEAVE          = 13 //离线事件
+	EVENT_MESSAGE        = 14 //消息事件
+	EVENT_INVAILD        = 15 //无效事件
+	EVENT_DRAW           = 16 //绘图事件
+	EVENT_BREAK_DRAW     = 17 //中断绘画事件
+	EVENT_GIVE_IDENTITY  = 18 //转换游戏身份事件
+	EVENT_NO_PLACE       = 19 //房间满人不能加入事件
+	EVENT_GAME_NO_START  = 20 //还不能开始游戏事件
+	EVENT_GAME_CAN_START = 21 //开始游戏事件
+	EVENT_GAME_ANSWER    = 22 //回答问题事件
+	EVENT_GAME_BONUS     = 23 //答对问题加分事件
+	EVENT_GAME_TIME      = 24 //游戏计时事件
+	EVENT_GAME_OVER      = 25 //游戏结束事件
 )
 
 type UserType int
 
+//刚刚进来就是观众身份，6个人到齐后就赋予身份
 const (
-	VIEWER = 100
-	PLAYER = 101
+	VIEWER    = 100 //观众
+	PLAYER    = 101 //猜一方
+	MASTER    = 102 //出题一方
+	NO_MASTER = 103 //不可以再赋予出题一方，当全部玩家身份为103时候，游戏结束，结算分数
 )
 
 type youPerformIGuess struct {
@@ -117,14 +128,10 @@ func addUser(user models.User) {
 }
 
 //更新房间成员
-func updateRoomsMember(roomId, roomName string, member Member) Room {
-
-	go updateRedisRoomsMember(roomId, roomName, member)
+func updateRoomsMember(roomId, roomName string, member Member) (newRoom Room, code int) {
 
 	newMember := make([]Member, 0)
 	newMember = append(newMember, member)
-
-	newRoom := Room{}
 
 	has := false
 
@@ -134,8 +141,18 @@ func updateRoomsMember(roomId, roomName string, member Member) Room {
 			helper.Debug("存在房间，更新成员")
 			for _, m := range r.Value.(Room).Member {
 				if m.UserId != member.UserId {
-					has = true
-					newMember = append(newMember, m)
+					if len(newMember) < 7 {
+						has = true
+						newMember = append(newMember, m)
+					} else {
+						//人数已经满了，不可以再加了啦
+						newRoom = Room{
+							Id:     r.Value.(Room).Id,
+							Name:   r.Value.(Room).Name,
+							Member: r.Value.(Room).Member}
+						code = EVENT_NO_PLACE
+						return
+					}
 				}
 			}
 			newRoom = Room{
@@ -144,6 +161,10 @@ func updateRoomsMember(roomId, roomName string, member Member) Room {
 				Member: newMember}
 			allRooms.Remove(r)
 			addRooms(newRoom)
+			if len(newMember) == 6 {
+				helper.Debug("人数已经齐了，开打")
+				code = EVENT_GAME_CAN_START
+			}
 		}
 	}
 
@@ -157,7 +178,13 @@ func updateRoomsMember(roomId, roomName string, member Member) Room {
 		addRooms(newRoom)
 	}
 
-	return newRoom
+	go updateRedisRoomsMember(roomId, roomName, member)
+
+	//人还没满呢
+
+	code = EVENT_GAME_NO_START
+
+	return
 }
 
 //更新用户连接
