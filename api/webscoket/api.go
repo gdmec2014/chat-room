@@ -15,7 +15,6 @@ import (
 // @router /hand [get]
 func (this *WebSocketController) Hand() {
 	if models.DBOk {
-		helper.Debug("数据库还没连接呢！")
 		this.join()
 	}
 	this.SetReturnData(helper.SUCCESS, "握手成功", nil, false)

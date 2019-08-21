@@ -92,18 +92,8 @@
                 "tags": [
                     "room"
                 ],
-                "description": "获取房间成员",
+                "description": "获取全部房间",
                 "operationId": "WebSocketController.获取全部房间",
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "房间ID",
-                        "schema": {
-                            "$ref": "#/definitions/.Room"
-                        }
-                    }
-                ],
                 "responses": {
                     "helper.SQL_ERROR": {
                         "description": "{object} helper.RestfulReturn"
@@ -209,6 +199,9 @@
         }
     },
     "definitions": {
+        ".Conn": {
+            "type": "object"
+        },
         ".Room": {
             "type": "object"
         },
@@ -220,7 +213,7 @@
             "type": "object",
             "properties": {
                 "Data": {
-                    "$ref": "#/definitions/989.0x11db3200.false"
+                    "$ref": "#/definitions/989.0x11a02560.false"
                 },
                 "Message": {
                     "type": "string"
@@ -239,6 +232,9 @@
             "properties": {
                 "avatar": {
                     "type": "string"
+                },
+                "conn": {
+                    "$ref": "#/definitions/websocket.Conn"
                 },
                 "delete_time": {
                     "type": "string",

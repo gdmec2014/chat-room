@@ -1,10 +1,11 @@
 package models
 
 import (
+	"chat-room/api/helper"
+	"encoding/json"
 	"github.com/astaxie/beego"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
-	"chat-room/api/helper"
 	"net"
 	"os"
 	"strconv"
@@ -12,15 +13,17 @@ import (
 )
 
 var (
-	ShowSql  bool //是否显示sql日志
-	db       *xorm.Engine
-	ds       *xorm.Session
-	DBOk     bool //数据库连接是否正常
-	Domain   string
-	SaltCode string //盐
+	ShowSql    bool //是否显示sql日志
+	db         *xorm.Engine
+	ds         *xorm.Session
+	DBOk       bool //数据库连接是否正常
+	Domain     string
+	SaltCode   string //盐
+	Vocabulary []string
 )
 
 var (
+	Redis        *redis = new(redis)
 	App          *app   = new(app)
 	QiNiu        *qiniu = new(qiniu)
 	DefaultAdmin *admin = new(admin)
@@ -53,7 +56,16 @@ type admin struct {
 	PassWord string
 }
 
+type redis struct {
+	Enable bool
+}
+
 func init() {
+
+	//读取词库
+	go setData()
+
+	Redis.Enable = true
 
 	DBOk = false
 
@@ -297,4 +309,25 @@ func GetIp() string {
 func GetPassword(password string, uid int64) string {
 	pass := helper.Md5(strconv.FormatInt(uid, 10) + password + SaltCode)
 	return pass
+}
+
+func setData() {
+	//打开index.json文件
+	file, err := os.Open("./data/index.json")
+	defer file.Close()
+	if helper.Error(err) {
+		return
+	}
+	//创建一个字节切片[]byte
+	bytes := make([]byte, 10*1024)
+
+	//将数据读取到切片中
+	num, err := file.Read(bytes)
+	if helper.Error(err) {
+		return
+	}
+	//将字节切片中的数据反序列化到Vocabulary切片中
+	err = json.Unmarshal(bytes[:num], &Vocabulary)
+	helper.Error(err)
+	helper.Debug("Vocabulary : ",Vocabulary)
 }

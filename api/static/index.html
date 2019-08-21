@@ -7,12 +7,20 @@
     <!-- 开发环境版本，包含了有帮助的命令行警告 -->
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
     <!-- 引入样式 -->
-    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <link rel="stylesheet" href="./elementUI/index.css">
     <!-- 引入组件库 -->
-    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="./elementUI/index.js"></script>
     <style>
         .el-form, .el-input {
             max-width: 500px;
+        }
+
+        .right {
+            float: right;
+        }
+
+        .left {
+            float: left;
         }
     </style>
 </head>
@@ -20,47 +28,74 @@
 
 <div id="app">
 
-    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
-        <h1>登陆</h1>
-        <el-form-item label="账号" prop="pass">
-            <el-input type="test" v-model="rule_form.name" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="checkPass">
-            <el-input type="password" v-model="rule_form.password" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item>
-            <el-button type="primary" @click="login">登陆</el-button>
-        </el-form-item>
-    </el-form>
+    <div v-show="in_room">
+        <canvas id="the_canvas" width="800" height="400"></canvas>
+    </div>
 
-    <div v-if="user">{{user}}</div>
+    <div v-if="!in_room">
+        <el-form v-if="!user" :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+            <el-form-item label="账号" prop="pass">
+                <el-input type="test" v-model="rule_form.name" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="checkPass">
+                <el-input type="password" v-model="rule_form.password" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="login">登陆</el-button>
+            </el-form-item>
+        </el-form>
+        <el-form v-if="user" :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
+            <el-form-item label="123" prop="pass">
+                <el-input type="test" v-model="msg" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="createRoom">create</el-button>
+            </el-form-item>
+        </el-form>
 
-    <el-form :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
-        <h1>webscoket</h1>
-        <el-form-item label="房间名/信息" prop="pass">
-            <el-input type="test" v-model="msg" autocomplete="off"></el-input>
-        </el-form-item>
-        <el-form-item>
-            <el-button type="primary" @click="createRoom">create</el-button>
-        </el-form-item>
-    </el-form>
+        <el-row :gutter="20">
+            <el-col :xs="24" :sm="12" :md="8" :lg="6" :xl="6" v-for="(item,index) in all_room" :key="index"
+                    class="text item">
+                <el-card>
+                    <div>
+                        {{item.name}}
+                    </div>
+                    <span v-if="isInRoom(item.member)">
+                        <el-button type="primary" @click="openRoom(item.id)">join</el-button>
+                    </span>
+                    <span v-else>
+                        <el-button type="primary" @click="joinRoom(item.id)">join</el-button>
+                    </span>
+                </el-card>
+            </el-col>
+        </el-row>
 
-    <h1>房间列表</h1>
-    <el-card class="box-card" v-for="(item,index) in all_room" :key="index" class="text item">
+    </div>
 
-        <div>
-            {{item}}
+    <el-card v-else>
+        <div slot="header" class="clearfix">
+            <el-button style="float: left; padding: 3px 5px" type="text" @click="in_room=false">返回</el-button>
         </div>
 
-        <span v-if="isInRoom(item.member)">
-            <input :id="item.id" value="灰灰好帅"/>
-            <el-button type="primary" @click="sendMsg(item.id)">send</el-button>
-        </span>
-        <span v-else>
-            <el-button type="primary" @click="joinRoom(item.id)">join</el-button>
-        </span>
+        <div style="min-height: 10rem">
 
+            <el-row>
+                <el-col :key="'msg_'+index" v-for="(item,index) in room_msg" style="width: 100%" :span="24">
+                    <div v-bind:class="[item.uid == user.uid ? 'right' : 'left']">
 
+                        <p>
+                            {{item.msg}}
+                        </p>
+                    </div>
+
+                </el-col>
+            </el-row>
+        </div>
+
+        <div>
+            <el-input type="textarea" v-model="ws_data.msg"></el-input>
+            <el-button type="primary" @click="sendMsg" style="float: right;margin: 2rem">send</el-button>
+        </div>
     </el-card>
 
 </div>
@@ -68,17 +103,30 @@
 
 <script>
 
-    EVENT_HAND = 10
-    EVENT_CREATE = 11
-    EVENT_JOIN = 12
-    EVENT_LEAVE = 13
-    EVENT_MESSAGE = 14
-
+    EVENT_HAND = 10 //握手事件
+    EVENT_CREATE = 11 //创房事件
+    EVENT_JOIN = 12 //加房事件
+    EVENT_LEAVE = 13 //离线事件
+    EVENT_MESSAGE = 14 //消息事件
+    EVENT_INVAILD = 15 //无效事件
+    EVENT_DRAW = 16 //绘图事件
+    EVENT_BREAK_DRAW = 17 //中断绘画事件
+    EVENT_GIVE_IDENTITY = 18 //赋予游戏身份事件
+    EVENT_NO_PLACE = 19 //房间满人了额
+    EVENT_GAME_NO_START = 20 //还不能开始游戏事件
+    EVENT_GAME_CAN_START = 21 //开始游戏事件
 
     let app = new Vue({
         el: '#app',
         data() {
             return {
+                room_msg: [],
+                in_room: false,
+                open_room_data: {
+                    id: "",
+                    name: "",
+                    user_type: 0
+                },
                 msg: "",
                 websock: null,
                 ws_data: {
@@ -88,14 +136,21 @@
                         name: "",
                         user_type: 0
                     },
-                    msg: ""
+                    msg: "",
+                    data: {}
                 },
                 rule_form: {
                     name: "111",
                     password: "111"
                 },
                 user: null,
-                all_room: []
+                all_room: [],
+                //绘图
+                context: null,    //2d对象
+                is_draw: false,   //是否正在绘制，松开鼠标时候应该为false
+                the_canvas: null, //画布
+                is_master: true,  //是否当前绘画者
+                in_start: false   //是否绘制了起点
             }
         },
 
@@ -104,13 +159,45 @@
             this.websocketClose();
         },
 
+        mounted() {
+            this.drawInit()
+            this.updateUser()
+        },
+
         methods: {
+            updateUser() {
+                let that = this
+                let token = localStorage.getItem("token")
+                if (token) {
+                    //更新用戶信息
+                    $.ajax({
+                        type: "GET",
+                        url: "/api/getuserbytoken?token=" + token,
+                        contentType: "application/json; charset=utf-8",
+                        success: function (res) {
+                            console.log(res)
+                            if (res.Result == 10000) {
+                                that.user = res.Data
+                                that.initWebSocket()
+                                that.getAllRoom()
+                            } else {
+                                this.$message(res.Message);
+                            }
+                        },
+                        error: function (res) {
+                            console.error(res)
+                        }
+                    });
+                } else {
+                    this.$message("要先登陸喔~");
+                }
+
+            },
             init() {
                 this.getAllRoom()
             },
 
             initWebSocket() { //初始化weosocket
-
                 console.log("初始化weosocket")
                 const ws_url = 'ws://' + window.location.host + '/v1/room/hand?token=' + this.user.token
                 this.websock = new WebSocket(ws_url);
@@ -119,7 +206,6 @@
                 this.websock.onmessage = this.websocketOnMessage;
                 this.websock.onclose = this.websocketClose;
             },
-
             websocketOnOpen() {
                 console.log("WebSocket连接成功");
                 this.ws_data.msg = "握手测试"
@@ -140,7 +226,7 @@
                     case EVENT_CREATE:
                         this.ws_data = data
                         console.log("创建成功", data)
-                        this.getAllRoom()
+                        this.all_room.push(data.room)
                         break
                     case EVENT_JOIN:
                         console.log("加入成功", data)
@@ -149,17 +235,34 @@
                         break
                     case EVENT_MESSAGE:
                         console.log("收到消息", data)
-                        this.$message(data.msg);
+                        let msg = data.data
+                        msg["msg"] = data.msg
+                        console.log(msg)
+                        this.setLocalStorageMsg(msg)
+                        break
+                    case EVENT_DRAW:
+                        //是否为绘画者，这个一定要判断，不然会无限发送事件
+                        console.log("绘图事件", data)
+                        this.is_master = data.data.user.uid == this.user.uid
+                        this.receiveDraw(data.data.user.uid, data.room.id, data.data.position.x, data.data.position.y)
+                        break
+                    case EVENT_BREAK_DRAW:
+                        //中断绘画
+                        console.log("中断绘图事件", data)
+                        this.is_master = data.data.user.uid == this.user.uid
+                        if (!this.is_master) {
+                            this.is_draw = false
+                            this.in_start = false
+                        }
                         break
                     default:
                         console.log("不知道是啥", data)
                 }
             },
-
             websocketSend(agentData) {//数据发送
                 this.websock.send(agentData);
+                this.ws_data.msg = ""
             },
-
             websocketClose(e) { //关闭
                 console.log("connection closed (" + e.code + ")");
                 this.initWebSocket()
@@ -181,16 +284,15 @@
                 this.ws_data.event_type = EVENT_JOIN
                 this.websocketSend(JSON.stringify(this.ws_data));
             },
-            sendMsg(room_id) {
-                let msg = $("#" + room_id).val()
-                if (msg) {
+            sendMsg() {
+                if (this.ws_data.msg) {
                     console.log("this.ws_data --", this.ws_data)
-                    this.ws_data.room.id = room_id
-                    this.ws_data.msg = msg
+                    this.ws_data.room.id = this.open_room_data.id
+                    this.ws_data.msg = this.ws_data.msg
                     this.ws_data.event_type = EVENT_MESSAGE
                     this.websocketSend(JSON.stringify(this.ws_data));
                 } else {
-                    alert("xxx")
+                    this.$message("要输入东西喔~");
                 }
             },
             login() {
@@ -206,6 +308,7 @@
                         if (res.Result == 10000) {
                             that.user = res.Data
                             that.initWebSocket()
+                            localStorage.setItem("token", that.user.token)
                         } else {
                             that.$message.error(res.Message);
                         }
@@ -237,11 +340,133 @@
             isInRoom(Member) {
                 let that = this
                 let u = Member.find((m) => {
-                    console.log(m, that.user)
                     return m.user_id == that.user.uid
                 });
-
                 return u || ""
+            },
+            openRoom(id) {
+                //进入房间
+                this.ws_data.msg = ""
+                this.open_room_data = this.all_room.find((r) => {
+                    return r.id == id
+                });
+                //加载历史消息
+                this.getLocalStorageMsg()
+                this.in_room = true
+            },
+            getLocalStorageMsg() {
+                this.room_msg = []
+                let msg = localStorage.getItem(this.open_room_data.id + "_msg")
+                if (msg) {
+                    this.room_msg = JSON.parse(msg)
+                }
+            },
+            setLocalStorageMsg(new_msg) {
+                let msg = localStorage.getItem(this.open_room_data.id + "_msg")
+                if (msg) {
+                    this.room_msg = JSON.parse(msg)
+                } else {
+                    this.room_msg = []
+                }
+                this.room_msg.push(new_msg)
+                localStorage.setItem(this.open_room_data.id + "_msg", JSON.stringify(this.room_msg))
+            },
+
+            //绘图初始化
+            drawInit() {
+                this.the_canvas = document.querySelector('#the_canvas')
+                if (!this.the_canvas || !this.the_canvas.getContext) {
+                    alert("你的浏览器不支持画画喔~")
+                    return
+                }
+                //获取2D对象
+                this.context = this.the_canvas.getContext('2d')
+
+                this.the_canvas.onmousedown = (e) => this.onMouseDown(e)
+                this.the_canvas.onmouseup = (e) => this.onMouseup(e)
+            },
+            //求出缩放的倍数
+            //每个人的屏幕物理像素大小都可能不一样，所以需要重新设计
+            windowToCanvas(canvas, x, y) {
+                //canvas 是移动中不断更新的，所以要传过来
+                //获取canvas元素距离窗口的一些属性，MDN上有解释
+                let rect = canvas.getBoundingClientRect()
+                //x和y参数分别传入的是鼠标距离窗口的坐标，然后减去canvas距离窗口左边和顶部的距离。
+                return {
+                    x: x - rect.left * (canvas.width / rect.width),
+                    y: y - rect.top * (canvas.height / rect.height)
+                }
+            },
+            //按下鼠标
+            onMouseDown(e) {
+                if (!this.is_master) {
+                    return
+                }
+                this.is_draw = true
+                //获得鼠标按下的点相对canvas的坐标。
+                let ele = this.windowToCanvas(this.the_canvas, e.clientX, e.clientY)
+                let {x, y} = ele
+                //绘制起点。
+                this.context.moveTo(x, y)
+                //鼠标移动事件
+                this.the_canvas.onmousemove = (e) => {
+                    this.the_canvas.onmouseup = (e) => this.onMouseup(e)
+                    this.draw(e.clientX, e.clientY)
+                }
+            },
+            //松开鼠标
+            onMouseup() {
+                this.breakDraw()
+                if (!this.is_master) {
+                    //告诉其他画家，哥哥我中断了绘画
+                    return
+                }
+                this.is_draw = false
+            },
+            //绘制到屏幕
+            draw(old_x, old_y) {
+                if (this.is_draw) {
+                    //移动时获取新的坐标位置，用lineTo记录当前的坐标，然后stroke绘制上一个点到当前点的路径
+                    let ele = this.windowToCanvas(this.the_canvas, old_x, old_y)
+                    console.log(ele)
+                    let {x, y} = ele
+                    this.context.lineTo(x, y)
+                    this.context.stroke()
+                    //是绘制者才应该发送数据去
+                    if (this.is_master) {
+                        this.sendDraw(x, y)
+                    }
+                }
+            },
+            //接收绘图事件
+            receiveDraw(draw_user_id, draw_room_id, x, y) {
+                //自己绘制的图，不需要再画在屏幕
+                //不是自己的房间，不要画图
+                if (draw_user_id == this.user.uid || draw_room_id != this.open_room_data.id) {
+                    return
+                }
+                //绘制起点
+                if (!this.in_start) {
+                    this.in_start = true
+                    this.context.moveTo(x, y)
+                    return
+                }
+                this.is_draw = true
+                this.draw(x, y)
+            },
+            //发送绘图事件
+            sendDraw(x, y) {
+                this.ws_data.room.id = this.open_room_data.id
+                this.ws_data.msg = "绘图"
+                this.ws_data.event_type = EVENT_DRAW
+                this.ws_data.data = {x, y}
+                this.websocketSend(JSON.stringify(this.ws_data));
+            },
+            breakDraw() {
+                this.ws_data.room.id = this.open_room_data.id
+                this.ws_data.msg = "中断绘图"
+                this.ws_data.event_type = EVENT_BREAK_DRAW
+                this.websocketSend(JSON.stringify(this.ws_data));
             }
         },
     })

@@ -3,6 +3,7 @@ package helper
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego"
 	"math/rand"
@@ -166,4 +167,14 @@ func Contain(parent interface{}, child interface{}) bool {
 
 	return false
 
+}
+
+func GetString(data interface{}) string {
+	return string(GetByte(data))
+}
+
+func GetByte(data interface{}) []byte  {
+	b,err := json.Marshal(&data)
+	Error(err)
+	return b
 }
