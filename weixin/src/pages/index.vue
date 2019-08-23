@@ -1,14 +1,17 @@
 <template>
-  <div @click="clickHandle">
+  <div class="container" @click="clickHandle('test click', $event)">
 
     <div class="userinfo" @click="bindViewTap">
       <img class="userinfo-avatar" v-if="userInfo.avatarUrl" :src="userInfo.avatarUrl" background-size="cover" />
-      <img class="userinfo-avatar" src="/static/images/user.png" background-size="cover" />
-
       <div class="userinfo-nickname">
         <card :text="userInfo.nickName"></card>
       </div>
     </div>
+
+    <van-tag>标签</van-tag>
+    <van-tag type="danger">标签</van-tag>
+    <van-tag type="primary">标签</van-tag>
+    <van-tag type="success">标签</van-tag>
 
     <div class="usermotto">
       <div class="user-motto">
@@ -17,18 +20,10 @@
     </div>
 
     <form class="form-container">
-      <input type="text" class="form-control" :value="motto" placeholder="v-model" />
       <input type="text" class="form-control" v-model="motto" placeholder="v-model" />
       <input type="text" class="form-control" v-model.lazy="motto" placeholder="v-model.lazy" />
     </form>
-
-
-    <div class="all">
-        <div class="left">
-        </div>
-        <div class="right">
-        </div>
-    </div>
+    <a href="/pages/counter" class="counter">去往Vuex示例页面</a>
   </div>
 </template>
 
@@ -36,13 +31,12 @@
 import card from '@/components/card'
 
 export default {
+  mpType: 'page',
+
   data () {
     return {
-      motto: 'Hello miniprograme',
-      userInfo: {
-        nickName: 'mpvue',
-        avatarUrl: 'http://mpvue.com/assets/logo.png'
-      }
+      motto: 'Hello World',
+      userInfo: {}
     }
   },
 
@@ -52,21 +46,29 @@ export default {
 
   methods: {
     bindViewTap () {
-      const url = '../logs/main'
-      if (mpvuePlatform === 'wx') {
-        mpvue.switchTab({ url })
-      } else {
-        mpvue.navigateTo({ url })
-      }
+      const url = '/packageA/logs'
+      this.$router.push(url)
     },
-    clickHandle (ev) {
-      console.log('clickHandle:', ev)
-      // throw {message: 'custom test'}
+    getUserInfo () {
+      // 调用登录接口
+      wx.login({
+        success: () => {
+          wx.getUserInfo({
+            success: (res) => {
+              this.userInfo = res.userInfo
+            }
+          })
+        }
+      })
+    },
+    clickHandle (msg, ev) {
+      console.log('clickHandle:', msg, ev)
     }
   },
 
   created () {
-    // let app = getApp()
+    // 调用应用实例的方法获取全局数据
+    this.getUserInfo()
   }
 }
 </script>
@@ -89,9 +91,6 @@ export default {
   color: #aaa;
 }
 
-.usermotto {
-  margin-top: 150px;
-}
 
 .form-control {
   display: block;
@@ -99,27 +98,12 @@ export default {
   margin-bottom: 5px;
   border: 1px solid #ccc;
 }
-.all{
-  width:7.5rem;
-  height:1rem;
-  background-color:blue;
-}
-.all:after{
-  display:block;
-  content:'';
-  clear:both;
-}
-.left{
-  float:left;
-  width:3rem;
-  height:1rem;
-  background-color:red;
-}
 
-.right{
-  float:left;
-  width:4.5rem;
-  height:1rem;
-  background-color:green;
+.counter {
+  display: inline-block;
+  margin: 10px auto;
+  padding: 5px 10px;
+  color: blue;
+  border: 1px solid blue;
 }
 </style>
