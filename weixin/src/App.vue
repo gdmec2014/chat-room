@@ -1,14 +1,22 @@
 <script>
-export default {
-  created () {
-    // 调用API从本地缓存中获取数据
-    const logs = wx.getStorageSync('logs') || []
-    logs.unshift(Date.now())
-    wx.setStorageSync('logs', logs)
+import { getToken } from "./utils/auto";
 
-    console.log('app created and cache logs by setStorageSync')
+export default {
+  created() {
+    // 调用API从本地缓存中获取数据
+    const logs = wx.getStorageSync("logs") || [];
+    logs.unshift(Date.now());
+    wx.setStorageSync("logs", logs);
+    console.log("app created and cache logs by setStorageSync");
+    //获取token
+    let token = getToken()
+    if (token) {
+        this.$store.dispatch("CheckUserLogin")
+    }else{
+       this.$store.dispatch("SetWXUserData")
+    }
   }
-}
+};
 </script>
 
 <style>

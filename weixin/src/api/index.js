@@ -21,8 +21,12 @@ export const Code = {
 }
 
 export const Service = {
-  //TODI auth
+  //TODO auth
   Register: '/v1/auth/register',
   Login: '/v1/auth/login',
-  GetUserByToken: '/api/getuserbytoken'
+  GetUserByToken: '/api/getuserbytoken',
+
+  //TODO wexin
+  WxLogin: '/v1/wx/login',
+  WxRegist: '/v1/wx/regist',
 }

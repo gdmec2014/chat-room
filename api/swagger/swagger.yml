@@ -127,10 +127,50 @@ paths:
           description: ""
           schema:
             $ref: '#/definitions/models.User'
+  /wx/login:
+    post:
+      tags:
+      - wx
+      description: 微信 login
+      operationId: WeChatController.微信 login
+      parameters:
+      - in: body
+        name: body
+        description: WxData
+        schema:
+          $ref: '#/definitions/.WxData'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn 登陆失败'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/models.User'
+  /wx/regist:
+    post:
+      tags:
+      - wx
+      description: 微信注册
+      operationId: WeChatController.微信注册
+      parameters:
+      - in: body
+        name: body
+        description: WxData
+        schema:
+          $ref: '#/definitions/.WxData'
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn 登陆失败'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/models.User'
 definitions:
   .Conn:
     type: object
   .Room:
+    type: object
+  .WxData:
     type: object
   .false:
     type: object
@@ -139,7 +179,7 @@ definitions:
     type: object
     properties:
       Data:
-        $ref: '#/definitions/989.0x11a02560.false'
+        $ref: '#/definitions/989.0x11d91920.false'
       Message:
         type: string
       Result:
@@ -162,6 +202,8 @@ definitions:
         format: string
       name:
         type: string
+      nick_name:
+        type: string
       password:
         type: string
       re_password:
@@ -183,3 +225,6 @@ tags:
 - name: room
   description: |
     WebSocketController
+- name: wx
+  description: |
+    微信类

@@ -5,17 +5,23 @@
 ## Build Setup
 
 ``` bash
-# install dependencies
+#安装依赖
 npm install
 
-# serve with hot reload at localhost:8080
+# dev
 npm run dev
 
-# build for production with minification
+# build
 npm run build
 
-# build for production and view the bundle analyzer report
+# build report
 npm run build --report
 ```
 
-For detailed explanation on how things work, checkout the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+## 插件说明
+
+### 集中式页面配置
+>[mpvue-entry](https://github.com/F-loat/mpvue-entry)
+
+### http 请求
+>[fly](https://github.com/wendux/fly)

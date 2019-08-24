@@ -1,42 +1,31 @@
 <template>
   <div class="container" @click="clickHandle('test click', $event)">
-
-    <div class="userinfo" @click="bindViewTap">
-      <img class="userinfo-avatar" v-if="userInfo.avatarUrl" :src="userInfo.avatarUrl" background-size="cover" />
-      <div class="userinfo-nickname">
-        <card :text="userInfo.nickName"></card>
+    <div class="userinfo" @click="bindViewTap" v-if="user">
+      <img class="userinfo-avatar" v-if="user.avatar" :src="user.avatar" background-size="cover">
+      <div class="userinfo-nickname" v-if="user.nick_name">
+        <card :text="user.nick_name"></card>
       </div>
     </div>
-
-    <van-tag>标签</van-tag>
-    <van-tag type="danger">标签</van-tag>
-    <van-tag type="primary">标签</van-tag>
-    <van-tag type="success">标签</van-tag>
-
-    <div class="usermotto">
-      <div class="user-motto">
-        <card :text="motto"></card>
-      </div>
-    </div>
-
-    <form class="form-container">
-      <input type="text" class="form-control" v-model="motto" placeholder="v-model" />
-      <input type="text" class="form-control" v-model.lazy="motto" placeholder="v-model.lazy" />
-    </form>
     <a href="/pages/counter" class="counter">去往Vuex示例页面</a>
   </div>
 </template>
 
 <script>
-import card from '@/components/card'
+import card from "@/components/card";
 
 export default {
-  mpType: 'page',
+  mpType: "page",
 
-  data () {
+  data() {
     return {
-      motto: 'Hello World',
+      motto: "Hello World",
       userInfo: {}
+    };
+  },
+
+  computed: {
+    user() {
+      return this.$store.getters.user;
     }
   },
 
@@ -45,32 +34,17 @@ export default {
   },
 
   methods: {
-    bindViewTap () {
-      const url = '/packageA/logs'
-      this.$router.push(url)
+    bindViewTap() {
+      const url = "/packageA/logs";
+      this.$router.push(url);
     },
-    getUserInfo () {
-      // 调用登录接口
-      wx.login({
-        success: () => {
-          wx.getUserInfo({
-            success: (res) => {
-              this.userInfo = res.userInfo
-            }
-          })
-        }
-      })
-    },
-    clickHandle (msg, ev) {
-      console.log('clickHandle:', msg, ev)
+    clickHandle(msg, ev) {
+      console.log("clickHandle:", msg, ev);
     }
   },
 
-  created () {
-    // 调用应用实例的方法获取全局数据
-    this.getUserInfo()
-  }
-}
+  created() {}
+};
 </script>
 
 <style scoped>
@@ -90,7 +64,6 @@ export default {
 .userinfo-nickname {
   color: #aaa;
 }
-
 
 .form-control {
   display: block;

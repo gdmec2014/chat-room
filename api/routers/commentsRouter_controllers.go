@@ -52,4 +52,22 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["chat-room/api/controllers:WeChatController"] = append(beego.GlobalControllerRouter["chat-room/api/controllers:WeChatController"],
+        beego.ControllerComments{
+            Method: "Login",
+            Router: `/login`,
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
+    beego.GlobalControllerRouter["chat-room/api/controllers:WeChatController"] = append(beego.GlobalControllerRouter["chat-room/api/controllers:WeChatController"],
+        beego.ControllerComments{
+            Method: "Regist",
+            Router: `/regist`,
+            AllowHTTPMethods: []string{"post"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
 }
