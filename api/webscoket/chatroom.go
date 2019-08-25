@@ -50,6 +50,7 @@ func Join(user models.User, roomId string) {
 		CorrectNumber: 0,
 		MaxMember:     6,
 	}
+	helper.Debug("Join", room)
 	newWS(user, room, EVENT_JOIN)
 }
 
@@ -84,39 +85,43 @@ func newWS(user models.User, room Room, eventType EventType) {
 	if room.Id != "nil" {
 		helper.Debug("更新房间成员")
 		//更新房间成员
-		var code int
+		var code EventType
 		newRoom, code = updateRoomsMember(room, member)
 		msg = user.Name + " 加入了房间 " + newRoom.Name
-		eventType = EVENT_NO_PLACE
-		switch code {
-		case EVENT_GAME_CAN_START:
-			//开始游戏
-			msg = "准备好了么~要开始了喔~"
-			//赋予玩家身份
-			for i, m := range newRoom.Member {
-				if i == 0 {
-					m.UserType = MASTER
-				} else {
-					m.UserType = PLAYER
+
+		if eventType != EVENT_CREATE {
+			eventType = code
+			switch code {
+			case EVENT_GAME_CAN_START:
+				//开始游戏
+				msg = "准备好了么~要开始了喔~"
+				//赋予玩家身份
+				for i, m := range newRoom.Member {
+					if i == 0 {
+						m.UserType = MASTER
+					} else {
+						m.UserType = PLAYER
+					}
 				}
+				//随机获取问题答案
+				vocabulary := models.Vocabulary
+				lenVocabulary := len(vocabulary)
+				r := rand.New(rand.NewSource(time.Now().UnixNano()))
+				key := r.Intn(lenVocabulary)
+				newRoom.KeyWord = vocabulary[key]
+				go startGame(newRoom)
+				break
+			case EVENT_GAME_NO_START:
+				//人数还不够，不可以开始喔
+				msg = "人数还不够，不可以开始喔~"
+				break
+			case EVENT_NO_PLACE:
+				//房间不能加人了
+				msg = "房间已经满人了喔！"
+				break
 			}
-			//随机获取问题答案
-			vocabulary := models.Vocabulary
-			lenVocabulary := len(vocabulary)
-			r := rand.New(rand.NewSource(time.Now().UnixNano()))
-			key := r.Intn(lenVocabulary)
-			newRoom.KeyWord = vocabulary[key]
-			go startGame(newRoom)
-			break
-		case EVENT_GAME_NO_START:
-			//人数还不够，不可以开始喔
-			msg = "人数还不够，不可以开始喔~"
-			break
-		case EVENT_NO_PLACE:
-			//房间不能加人了
-			msg = "房间已经满人了喔！"
-			break
 		}
+
 	} else {
 		eventType = EVENT_INVAILD
 		msg = "无效事件"
@@ -131,6 +136,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 	}
 
 	event := Event{
+		Data:      user,
 		TimeUnix:  time.Now().Unix(),
 		Msg:       msg,
 		EventType: eventType,
@@ -151,8 +157,8 @@ func chatRoom() {
 				event.EventType = EVENT_HAND
 				event.Msg = "握手成功"
 				break
-			case EVENT_JOIN:
-				//创建房间
+			case EVENT_JOIN, EVENT_GAME_NO_START:
+				//加入房间
 				helper.Debug("加入房间")
 				break
 			case EVENT_CREATE:

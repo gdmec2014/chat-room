@@ -18,6 +18,20 @@ export const Code = {
   UNMARSHAL_ERROR: 40002, //40002 反序列化错误
   //数据库错误
   SQL_ERROR: 50000, //数据库错误
+
+  //webscoket
+  EVENT_HAND: 10, //握手事件
+  EVENT_CREATE: 11, //创房事件
+  EVENT_JOIN: 12, //加房事件
+  EVENT_LEAVE: 13, //离线事件
+  EVENT_MESSAGE: 14, //消息事件
+  EVENT_INVAILD: 15, //无效事件
+  EVENT_DRAW: 16, //绘图事件
+  EVENT_BREAK_DRAW: 17, //中断绘画事件
+  EVENT_GIVE_IDENTITY: 18, //赋予游戏身份事件
+  EVENT_NO_PLACE: 19, //房间满人了额
+  EVENT_GAME_NO_START: 20, //还不能开始游戏事件
+  EVENT_GAME_CAN_START: 21 //开始游戏事件
 }
 
 export const Service = {
@@ -29,4 +43,7 @@ export const Service = {
   //TODO wexin
   WxLogin: '/v1/wx/login',
   WxRegist: '/v1/wx/regist',
+
+  //TODO room
+  GetAllRoom: '/v1/room/get_all_room?token='
 }

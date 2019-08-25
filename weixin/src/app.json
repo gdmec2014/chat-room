@@ -1,15 +1,10 @@
 {
   "pages": [
     {
-      "path": "pages/index",
+      "path": "pages/home/index",
       "config": {
         "navigationBarTitleText": "weixin"
       }
-    },
-    "pages/counter",
-    {
-      "path": "packageA/logs",
-      "subPackage": true
     }
   ],
   "window": {
@@ -19,6 +14,13 @@
     "navigationBarTextStyle": "black"
   },
   "usingComponents": {
-    "van-tag": "/vant-weapp/dist/tag/index"
+    "van-tag": "/vant-weapp/dist/tag/index",
+    "van-field": "vant-weapp/dist/field/index",
+    "van-cell-group": "/vant-weapp/dist/cell-group/index",
+    "van-button": "/vant-weapp/dist/button/index",
+    "van-radio": "/vant-weapp/dist/radio/index",
+    "van-radio-group": "/vant-weapp/dist/radio-group/index",
+    "van-cell": "/vant-weapp/dist/cell/index",
+    "van-card": "/vant-weapp/dist/card/index"
   }
 }

@@ -128,7 +128,7 @@ func addUser(user models.User) {
 }
 
 //更新房间成员
-func updateRoomsMember(room Room, member Member) (newRoom Room, code int) {
+func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) {
 
 	newMember := make([]Member, 0)
 	newMember = append(newMember, member)

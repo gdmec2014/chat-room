@@ -39,7 +39,7 @@ func (this *WebSocketController) join() {
 			msg := string(p)
 			helper.Debug("msg --- ", msg)
 			err := json.Unmarshal([]byte(msg), &m)
-			if err == nil {
+			if !helper.Error(err) {
 				switch m.EventType {
 				case EVENT_CREATE:
 					if len(m.Room.Name) < 1 {
