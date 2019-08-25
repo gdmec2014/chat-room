@@ -18,6 +18,7 @@ type Room struct {
 	TimeUnix      int64    `json:"time_unix"`      //创建时间
 	KeyWord       string   `json:"key_word"`       //当前游戏正确答案
 	CorrectNumber int      `json:"correct_number"` //当前轮游戏回答正确人数
+	MaxMember     int      `json:"max_member"`     //游戏最大人数
 }
 
 type Member struct {
@@ -41,16 +42,32 @@ var (
 
 //加入房间
 func Join(user models.User, roomId string) {
-	newWS(user, roomId, "才不管啥名字", EVENT_JOIN)
+	room := Room{
+		Id:            roomId,
+		Name:          "才不知道是啥名字",
+		TimeUnix:      time.Now().Unix(),
+		KeyWord:       "",
+		CorrectNumber: 0,
+		MaxMember:     6,
+	}
+	newWS(user, room, EVENT_JOIN)
 }
 
 //创建房间
-func Create(user models.User, roomId, roomName string) {
-	newWS(user, roomId, roomName, EVENT_CREATE)
+func Create(user models.User, roomId, roomName string, maxMember int) {
+	room := Room{
+		Id:            roomId,
+		Name:          roomName,
+		TimeUnix:      time.Now().Unix(),
+		KeyWord:       "",
+		CorrectNumber: 0,
+		MaxMember:     maxMember,
+	}
+	newWS(user, room, EVENT_CREATE)
 }
 
 //封装消息
-func newWS(user models.User, roomId, roomName string, eventType EventType) {
+func newWS(user models.User, room Room, eventType EventType) {
 
 	var newRoom Room
 
@@ -64,11 +81,11 @@ func newWS(user models.User, roomId, roomName string, eventType EventType) {
 	}
 
 	//房间nil是握手的房间
-	if roomId != "nil" {
+	if room.Id != "nil" {
 		helper.Debug("更新房间成员")
 		//更新房间成员
 		var code int
-		newRoom, code = updateRoomsMember(roomId, roomName, member)
+		newRoom, code = updateRoomsMember(room, member)
 		msg = user.Name + " 加入了房间 " + newRoom.Name
 		eventType = EVENT_NO_PLACE
 		switch code {

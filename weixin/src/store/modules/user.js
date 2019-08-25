@@ -6,6 +6,7 @@ import store from "../../store"
 let user = {
   state: {
     data: {
+      conn: null
     }
   },
 
@@ -17,7 +18,11 @@ let user = {
     SET_WX_USER_DATA: (state, data) => {
       console.log("设置wx user data ", data)
       state.data = data
-    }
+    },
+    SET_USER_CONN: (state, conn) => {
+      console.log("设置user conn ", conn)
+      state.data.conn = conn
+    },
   },
 
   actions: {
@@ -61,10 +66,11 @@ let user = {
         }
       })
     },
+    //刷新页面时候重新拉取用户数据
     CheckUserLogin({
       commit
     }) {
-      GetUserByToken().then(res => {        
+      GetUserByToken().then(res => {
         if (res.Result == 10000) {
           commit('SET_USER_DATA', res.Data)
           setToken(res.Data.token)
@@ -73,7 +79,13 @@ let user = {
           store.dispatch("SetWXUserData")
         }
       })
-    }
+    },
+    //更新用户连接
+    SetUserConn({
+      commit
+    }, conn) {
+      commit('SET_USER_CONN', conn)
+    },
   }
 }
 

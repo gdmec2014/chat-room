@@ -43,7 +43,9 @@ export default {
     }
   },
 
-  created() {}
+  created() {
+    this.$sendSocketMessage({data:"ssssss"})
+  }
 };
 </script>
 
