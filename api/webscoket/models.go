@@ -128,7 +128,7 @@ func addUser(user models.User) {
 }
 
 //更新房间成员
-func updateRoomsMember(roomId, roomName string, member Member) (newRoom Room, code int) {
+func updateRoomsMember(room Room, member Member) (newRoom Room, code int) {
 
 	newMember := make([]Member, 0)
 	newMember = append(newMember, member)
@@ -137,28 +137,31 @@ func updateRoomsMember(roomId, roomName string, member Member) (newRoom Room, co
 
 	for r := allRooms.Front(); r != nil; r = r.Next() {
 		helper.Debug(r.Value.(Room))
-		if r.Value.(Room).Id == roomId {
+		if r.Value.(Room).Id == room.Id {
+			newRoom.MaxMember = r.Value.(Room).MaxMember
 			helper.Debug("存在房间，更新成员")
 			for _, m := range r.Value.(Room).Member {
 				if m.UserId != member.UserId {
-					if len(newMember) < 7 {
+					if len(newMember) < newRoom.MaxMember {
 						has = true
 						newMember = append(newMember, m)
 					} else {
 						//人数已经满了，不可以再加了啦
 						newRoom = Room{
-							Id:     r.Value.(Room).Id,
-							Name:   r.Value.(Room).Name,
-							Member: r.Value.(Room).Member}
+							MaxMember: r.Value.(Room).MaxMember,
+							Id:        r.Value.(Room).Id,
+							Name:      r.Value.(Room).Name,
+							Member:    r.Value.(Room).Member}
 						code = EVENT_NO_PLACE
 						return
 					}
 				}
 			}
 			newRoom = Room{
-				Id:     r.Value.(Room).Id,
-				Name:   r.Value.(Room).Name,
-				Member: newMember}
+				MaxMember: r.Value.(Room).MaxMember,
+				Id:        r.Value.(Room).Id,
+				Name:      r.Value.(Room).Name,
+				Member:    newMember}
 			allRooms.Remove(r)
 			addRooms(newRoom)
 			if len(newMember) == 6 {
@@ -172,13 +175,14 @@ func updateRoomsMember(roomId, roomName string, member Member) (newRoom Room, co
 	if !has {
 		helper.Debug("不存在房间，新加")
 		newRoom = Room{
-			Id:     roomId,
-			Name:   roomName,
-			Member: newMember}
+			MaxMember: room.MaxMember,
+			Id:        room.Id,
+			Name:      room.Name,
+			Member:    newMember}
 		addRooms(newRoom)
 	}
 
-	go updateRedisRoomsMember(roomId, roomName, member)
+	go updateRedisRoomsMember(room.Id, room.Name, member)
 
 	//人还没满呢
 

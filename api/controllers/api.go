@@ -19,3 +19,8 @@ func (this *ApiController) GetUserByToken() {
 	user := this.checkLogin()
 	this.SetReturnData(helper.SUCCESS, "love you", user)
 }
+
+func (this *ApiController) GetUserByWXId() {
+	user := this.checkLogin()
+	this.SetReturnData(helper.SUCCESS, "love you", user)
+}

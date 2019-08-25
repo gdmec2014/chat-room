@@ -1,0 +1,24 @@
+{
+  "pages": [
+    {
+      "path": "pages/index",
+      "config": {
+        "navigationBarTitleText": "weixin"
+      }
+    },
+    "pages/counter",
+    {
+      "path": "packageA/logs",
+      "subPackage": true
+    }
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#fff",
+    "navigationBarTitleText": "WeChat",
+    "navigationBarTextStyle": "black"
+  },
+  "usingComponents": {
+    "van-tag": "/vant-weapp/dist/tag/index"
+  }
+}

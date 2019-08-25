@@ -1,12 +1,14 @@
 package helper
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego"
 	"math/rand"
+	"net/http"
 	"os"
 	"reflect"
 	"runtime"
@@ -173,8 +175,16 @@ func GetString(data interface{}) string {
 	return string(GetByte(data))
 }
 
-func GetByte(data interface{}) []byte  {
-	b,err := json.Marshal(&data)
+func GetByte(data interface{}) []byte {
+	b, err := json.Marshal(&data)
 	Error(err)
 	return b
+}
+
+func ReadBody(resp *http.Response) []byte {
+	resBody := resp.Body
+	buf := new(bytes.Buffer)
+	buf.ReadFrom(resBody)
+	Debug(buf.String())
+	return buf.Bytes()
 }

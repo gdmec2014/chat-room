@@ -9,6 +9,7 @@ import (
 type User struct {
 	Id         int64           `xorm:"not null pk autoincr INT(64)" json:"uid,omitempty"`
 	Name       string          `xorm:"not null comment('名字') unique VARCHAR(50)" json:"name,omitempty"`
+	NickName   string          `xorm:"not null comment('nick名字') VARCHAR(50)" json:"nick_name,omitempty"`
 	WxId       string          `xorm:"not null comment('微信ID') unique VARCHAR(255)" json:"wx_id,omitempty"`
 	Avatar     string          `xorm:"null comment('头像') VARCHAR(255)" json:"avatar,omitempty"`
 	Password   string          `xorm:"not null comment('密码') VARCHAR(255)" json:"password,omitempty"`

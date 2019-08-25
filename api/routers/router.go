@@ -44,6 +44,11 @@ func init() {
 				&webscoket.WebSocketController{},
 			),
 		),
+		beego.NSNamespace("/wx",
+			beego.NSInclude(
+				&controllers.WeChatController{},
+			),
+		),
 	)
 	beego.AddNamespace(ns)
 }
