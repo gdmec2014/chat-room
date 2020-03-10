@@ -19,7 +19,7 @@ require (
 	github.com/pkg/errors v0.8.1
 	github.com/qiniu/api.v7 v7.2.5+incompatible
 	github.com/qiniu/x v7.0.8+incompatible // indirect
-	github.com/silenceper/wechat v2.0.0+incompatible
+	github.com/silenceper/wechat v1.2.3
 	github.com/xlstudio/wxbizdatacrypt v0.0.0-20190418111444-c3e116880c11 // indirect
 	qiniupkg.com/x v7.0.8+incompatible // indirect
 )
