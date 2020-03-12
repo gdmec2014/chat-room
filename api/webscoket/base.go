@@ -54,11 +54,6 @@ func (this *WebSocketController) join() {
 				case EVENT_JOIN:
 					Join(this.User, m.Room.Id)
 					break
-				case EVENT_MESSAGE:
-					this.User.Token = ""
-					m.Data = this.User
-					publish <- m
-					break
 				case EVENT_DRAW:
 					data := make(map[string]interface{})
 					data["user"] = this.User
@@ -72,55 +67,97 @@ func (this *WebSocketController) join() {
 					m.Data = data
 					publish <- m
 					break
-				case EVENT_GAME_ANSWER:
+				case EVENT_GAME_ANSWER, EVENT_MESSAGE:
+					helper.Debug("替换答案 ***")
+					this.User.Token = ""
+					m.Data = this.User
+
 					//当前用户是谁
 					data := make(map[string]interface{})
 					data["user"] = this.User
-					m.Data = data
 
 					//TODO 后期要考虑一个用户只能加入一个房间，现在还没实现
 					room := getRoom(m.Room.Id)
 					//这条消息发给谁呢
-					m.Room.Member = room.Member
+					m.Room = room
+
+					if !isGameStart(room) {
+						publish <- m
+						return
+					}
+
 					//获取自己的身份
 					has := false       //是否真的在房间
 					needBonus := false //是否需要加分
 					for _, u := range room.Member {
 						if u.UserId == this.User.Id {
+							helper.DebugStructToString(u)
 							has = true
 							if u.UserType == MASTER {
 								//玩野?
-							} else {
+							} else if u.UserType == PLAYER {
 								needBonus = true
 							}
 							break
 						}
 					}
+
 					//有效事件
 					if has {
 						//替换答案 ***
+						isTrue := false
 						msg := m.Msg
 						newMsg := strings.Replace(msg, room.KeyWord, "*", -1)
 						if newMsg != msg {
 							newMsg = "***"
+							isTrue = true
 						}
 						//推送消息
 						m.Msg = newMsg
 						publish <- m
 						//判断答案
-						if msg == room.KeyWord {
+						//isTrue = true
+						//needBonus = true
+						if isTrue {
 							if needBonus {
 								//答对啦，奖你一包辣条
 								m.EventType = EVENT_GAME_BONUS
 								m.Msg = "恭喜" + this.User.Name + "答对了"
 								publish <- m
-								//获取当前答对人数，计算分数
-								//TODO 答对人数应该保存在内存，还没实现
-								if m.Room.CorrectNumber == 0 {
-									m.Room.CorrectNumber = 1
-								}
+
 								m.Msg = "居然答对了！这么厉害~"
-								data["Score"] = int(100 / m.Room.CorrectNumber)
+
+								mark := Mark{
+									Id: this.User.Id,
+								}
+
+								//加分
+								if m.Room.Mark == nil {
+									m.Room.Mark = make(map[int][]Mark, 0)
+								}
+								if _, ok := m.Room.Mark[m.Room.Times]; ok {
+									//存在
+									mm := m.Room.Mark[m.Room.Times]
+									hasAdd := false
+									for i, _ := range mm {
+										if mm[i].Id == this.User.Id {
+											//已经加过分了
+											hasAdd = true
+										}
+									}
+									if !hasAdd {
+										correctNumber := len(m.Room.Mark[m.Room.Times])
+										correctNumber ++
+										mark.Point = int(100 / correctNumber)
+										m.Room.Mark[m.Room.Times] = append(m.Room.Mark[m.Room.Times], mark)
+										updateRooms(m.Room)
+									}
+								} else {
+									m.Room.Mark[m.Room.Times] = make([]Mark, 0)
+									mark.Point = 100
+									m.Room.Mark[m.Room.Times] = append(m.Room.Mark[m.Room.Times], mark)
+									updateRooms(m.Room)
+								}
 								publish <- m
 							}
 						}

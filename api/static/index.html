@@ -24,7 +24,7 @@
         }
 
         .disable {
-            pointer-events: none;
+            /*pointer-events: none;*/
         }
     </style>
 </head>
@@ -32,6 +32,21 @@
 
 <div id="app">
     <div v-show="in_room">
+        <div v-if="members.length > 0" style="max-width: 300px;float: right">
+            <el-table
+                    :data="members">
+                <el-table-column
+                        prop="user_name"
+                        label="name"
+                        width="180">
+                </el-table-column>
+                <el-table-column
+                        prop="point"
+                        label="point">
+                </el-table-column>
+                </el-table-column>
+            </el-table>
+        </div>
         <div>
             {{user_type_tip}}
             <el-button @click="restart">再來一局</el-button>
@@ -45,6 +60,7 @@
             </div>
             <canvas id="the_canvas" width="800" height="400"></canvas>
         </div>
+
     </div>
 
     <div v-if="!in_room">
@@ -87,9 +103,8 @@
 
     </div>
 
-    <el-card v-else>
+    <el-card v-else v-show="user_type != 102">
         <div slot="header" class="clearfix">
-            <el-button style="float: left; padding: 3px 5px" type="text" @click="in_room=false">返回</el-button>
         </div>
 
         <div style="min-height: 10rem">
@@ -148,6 +163,7 @@
         el: '#app',
         data() {
             return {
+                members: [],
                 all_over: false,
                 answer: "",
                 user_type: VIEWER,
@@ -294,6 +310,7 @@
                         this.getAllRoom()
                         break
                     case EVENT_MESSAGE:
+                    case EVENT_GAME_ANSWER:
                         console.log("收到消息", data)
                         let msg = data.data
                         msg["msg"] = data.msg
@@ -319,11 +336,14 @@
                         //玩家加入房間，但人數沒全
                         console.log("玩家加入房間，但人數沒全");
                         this.openRoom(data.room.id)
+                        this.initMember(data)
                         break
                     case EVENT_GAME_CAN_START:
                         //玩家加入房間，人數ok,開打
                         console.log("玩家加入房間，人數ok,開打");
+                        this.the_canvas.height = this.the_canvas.height;
                         this.openRoom(data.room.id)
+                        this.initMember(data)
                         break
                     case EVENT_GAME_ANSWER:
                         //回答问题事件
@@ -348,13 +368,27 @@
                             this.answer = ""
                         }
                         this.updateIdentity(data)
+
+                        if (this.members.length < 1) {
+                            this.initMember(data)
+                        }
+                        this.updatePoint(data)
+
                         break
                     case EVENT_GAME_OVER:
+                        //游戏结束事件
                         console.log("結束");
                         this.user_type_tip = "看看你多少分~"
                         this.updateIdentity(data)
                         break
-                    //游戏结束事件
+                    case EVENT_GIVE_IDENTITY:
+                        //赋予游戏身份
+                        console.log("赋予游戏身份");
+                        this.the_canvas.height = this.the_canvas.height;
+                        break
+                    case EVENT_GAME_BONUS:
+                        console.log("加分事件");
+                        break
                     default:
                         console.log("不知道是啥", data)
                 }
@@ -366,6 +400,34 @@
             websocketClose(e) { //关闭
                 console.log("connection closed (" + e.code + ")");
                 this.initWebSocket()
+            },
+            initMember(data) {
+                //初始化用户信息
+                if (data.room.member) {
+                    this.members = []
+                    var members = data.room.member
+                    for (var i = 0; i < members.length; i++) {
+                        var m = members[i]
+                        m.point = 0
+                        this.members.push(m)
+                    }
+                }
+            },
+            updatePoint(data) {
+                var marks = data.room.mark
+                if (marks) {
+                    for (var i = 0; i < this.members.length; i++) {
+                        this.members[i].point = 0
+                        for (var j in marks) {
+                            var ps = marks[j]
+                            for (var k = 0; k < ps.length; k++) {
+                                if (this.members[i].user_id == ps[k].id) {
+                                    this.members[i].point += ps[k].point
+                                }
+                            }
+                        }
+                    }
+                }
             },
             intoRoom(data) {
                 if (data.room.member) {
@@ -442,7 +504,7 @@
                     console.log("this.ws_data --", this.ws_data)
                     this.ws_data.room.id = this.open_room_data.id
                     this.ws_data.msg = this.ws_data.msg
-                    this.ws_data.event_type = EVENT_MESSAGE
+                    this.ws_data.event_type = EVENT_GAME_ANSWER
                     this.websocketSend(JSON.stringify(this.ws_data));
                 } else {
                     this.$message("要输入东西喔~");
@@ -566,9 +628,7 @@
             //按下鼠标
             onMouseDown(e) {
                 if (this.user_type != MASTER) {
-                    return
-                }
-                if (!this.is_master) {
+                    console.log("你不可以画1");
                     return
                 }
                 this.is_draw = true
@@ -586,9 +646,6 @@
             //松开鼠标
             onMouseup() {
                 if (this.user_type != MASTER) {
-                    return
-                }
-                if (!this.is_master) {
                     return
                 }
                 //告诉其他画家，哥哥我中断了绘画

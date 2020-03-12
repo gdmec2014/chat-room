@@ -13,13 +13,20 @@ import (
 //TODO webscoket 房间事件处理
 
 type Room struct {
-	Id            string   `json:"id"`
-	Name          string   `json:"name"`
-	Member        []Member `json:"member"`
-	TimeUnix      int64    `json:"time_unix"`      //创建时间
-	KeyWord       string   `json:"key_word"`       //当前游戏正确答案
-	CorrectNumber int      `json:"correct_number"` //当前轮游戏回答正确人数
-	MaxMember     int      `json:"max_member"`     //游戏最大人数
+	Id            string         `json:"id"`
+	Name          string         `json:"name"`
+	Member        []Member       `json:"member"`
+	TimeUnix      int64          `json:"time_unix"`      //创建时间
+	KeyWord       string         `json:"key_word"`       //当前游戏正确答案
+	CorrectNumber int            `json:"correct_number"` //当前轮游戏回答正确人数
+	MaxMember     int            `json:"max_member"`     //游戏最大人数
+	Times         int            `json:"times"`          //经历了几轮游戏
+	Mark          map[int][]Mark `json:"mark"`           //每一轮的分数
+}
+
+type Mark struct {
+	Id    int64 `json:"id"`
+	Point int   `json:"point"`
 }
 
 type Member struct {
@@ -66,6 +73,7 @@ func Create(user models.User, roomId, roomName string) {
 		CorrectNumber: 0,
 		MaxMember:     YouPerformIGuess.MaxNumber,
 	}
+	room.Mark = make(map[int][]Mark,0)
 	newWS(user, room, EVENT_CREATE)
 }
 
@@ -91,7 +99,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 		var code EventType
 		if EVENT_GAME_RE_START != eventType {
 			newRoom, code = updateRoomsMember(room, member)
-		}else{
+		} else {
 			helper.Debug("重新開始遊戲")
 			code = EVENT_GAME_CAN_START
 			newRoom = room
@@ -99,7 +107,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 		msg = user.Name + " 加入了房间 " + newRoom.Name
 
 		if eventType != EVENT_CREATE {
-			helper.Debug("code:",code)
+			helper.Debug("code:", code)
 			eventType = code
 			switch code {
 			case EVENT_GAME_CAN_START:
@@ -120,6 +128,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 				r := rand.New(rand.NewSource(time.Now().UnixNano()))
 				key := r.Intn(lenVocabulary)
 				newRoom.KeyWord = vocabulary[key]
+				updateRooms(newRoom)
 				go startGame(newRoom)
 				break
 			case EVENT_GAME_NO_START:
@@ -202,6 +211,12 @@ func chatRoom() {
 				event.Msg = "人已经满了喔~"
 				helper.Debug("人已经满了喔~")
 				break
+			case EVENT_GAME_ANSWER:
+				helper.Debug("回答问题")
+				break
+			case EVENT_GAME_BONUS:
+				helper.Debug("加分事件")
+				break
 			default:
 				//握手时候，没有房间号
 				helper.Debug("假装握手")
@@ -253,31 +268,31 @@ func broadcastWebSocket(event Event) {
 		event.Msg = "人已经满了喔~"
 		helper.Debug("人已经满了喔~")
 		room = getRoom(event.Room.Id)
-		has,user := hasMember(event.Uid)
+		has, user := hasMember(event.Uid)
 		if has {
-			member = make([]models.User,0)
-			member = append(member,user)
+			member = make([]models.User, 0)
+			member = append(member, user)
 		}
 		break
 	case EVENT_GAME_IS_START:
 		event.Msg = "遊戲正在進行中喔~"
 		helper.Debug("遊戲正在進行中喔~")
 		room = getRoom(event.Room.Id)
-		has,user := hasMember(event.Uid)
+		has, user := hasMember(event.Uid)
 		if has {
-			member = make([]models.User,0)
-			member = append(member,user)
+			member = make([]models.User, 0)
+			member = append(member, user)
 		}
 		break
 	case EVENT_GAME_MEMBER_NOT_ENOUGH:
 		event.Msg = "人數沒满喔~不可以開始"
 		helper.Debug("人數沒满喔~不可以開始")
 		room = getRoom(event.Room.Id)
-		has,user := hasMember(event.Uid)
-		helper.Debug("has",has,event.Uid)
+		has, user := hasMember(event.Uid)
+		helper.Debug("has", has, event.Uid)
 		if has {
-			member = make([]models.User,0)
-			member = append(member,user)
+			member = make([]models.User, 0)
+			member = append(member, user)
 		}
 		break
 	default:
@@ -299,7 +314,7 @@ func broadcastWebSocket(event Event) {
 	for _, m := range member {
 		ws := m.Conn
 		if ws != nil {
-			if err := ws.WriteMessage(websocket.TextMessage, data);err != nil {
+			if err := ws.WriteMessage(websocket.TextMessage, data); err != nil {
 				//发生错误，这里应该作重连机制
 				beego.Error(err)
 				ws.Close()
@@ -310,7 +325,7 @@ func broadcastWebSocket(event Event) {
 
 //开始游戏
 func startGame(room Room) bool {
-	
+
 	t := 0
 	t1 := time.NewTimer(time.Second * 1)
 
@@ -336,8 +351,15 @@ loop:
 				for i, m := range room.Member {
 					switch m.UserType {
 					case MASTER:
+						//随机获取问题答案
+						vocabulary := models.Vocabulary
+						lenVocabulary := len(vocabulary)
+						r := rand.New(rand.NewSource(time.Now().UnixNano()))
+						key := r.Intn(lenVocabulary)
+						event.Room.KeyWord = vocabulary[key]
 						event.Room.Member[i].UserType = NO_MASTER
 						isOver++
+						updateRooms(event.Room)
 						break
 					case NO_MASTER:
 						isOver++
@@ -350,12 +372,26 @@ loop:
 						break
 					}
 				}
-				helper.Debug("isOver:",isOver)
+				helper.Debug("isOver:", isOver)
+
 				if isOver == len(event.Room.Member) {
-					//中断游戏
-					helper.Debug("游戏已經結束")
-					event.EventType = EVENT_GAME_OVER
-					broadcastWebSocket(event)
+					room.Times++
+					if YouPerformIGuess.Times < room.Times {
+						//中断游戏
+						helper.Debug("游戏已經結束啦")
+						event.EventType = EVENT_GAME_OVER
+						broadcastWebSocket(event)
+					} else {
+						helper.Debug("第", room.Times, "轮游戏")
+						for i, _ := range room.Member {
+							room.Member[i].UserType = VIEWER
+						}
+						user := models.User{}
+						newWS(user, room, EVENT_GAME_RE_START)
+					}
+					newRoom := getRoom(room.Id)
+					newRoom.Times = room.Times
+					updateRooms(newRoom)
 					break loop
 				} else {
 					//更新身份
@@ -364,6 +400,8 @@ loop:
 				}
 			} else {
 				//推送本轮游戏剩余时间
+				newRoom := getRoom(room.Id)
+				event.Room = newRoom
 				event.EventType = EVENT_GAME_TIME
 				event.Data = YouPerformIGuess.TimeOver - t
 				broadcastWebSocket(event)

@@ -49,6 +49,7 @@ const (
 type youPerformIGuess struct {
 	MaxNumber int `json:"max_number"`
 	TimeOver  int `json:"time_over"`
+	Times     int `json:"times"`
 }
 
 var (
@@ -66,6 +67,10 @@ func init() {
 	YouPerformIGuess.TimeOver = models.GetAppConfInt("youPerformIGuess::timeOver")
 	if YouPerformIGuess.TimeOver < 1 {
 		YouPerformIGuess.TimeOver = 30
+	}
+	YouPerformIGuess.Times = models.GetAppConfInt("youPerformIGuess::times")
+	if YouPerformIGuess.Times < 0 {
+		YouPerformIGuess.Times = 0
 	}
 	beego.Info(YouPerformIGuess)
 }
@@ -136,6 +141,22 @@ func addRooms(room Room) {
 func addUser(user models.User) {
 	allUser.PushBack(user)
 }
+
+//更新分数
+func updateRooms(room Room) {
+	needUpdate := false
+	for r := allRooms.Front(); r != nil; r = r.Next() {
+		if r.Value.(Room).Id == room.Id {
+			allRooms.Remove(r)
+			needUpdate = true
+		}
+	}
+	if needUpdate {
+		addRooms(room)
+	}
+	helper.DebugStructToString(room)
+}
+
 
 //更新房间成员
 func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) {
@@ -374,4 +395,28 @@ func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) 
 	}
 	SetSAdd(roomId+"_member", member)
 	return
+}
+
+//判断游戏是不是在进行中
+func isGameStart(room Room) bool {
+
+	noMasterNum := 0
+	for _, m := range room.Member {
+		if m.UserType != NO_MASTER {
+			//存在出題人，則遊戲沒有結束
+			helper.Debug("存在出題人，則遊戲沒有結束2")
+			return true
+		} else {
+			noMasterNum++
+		}
+	}
+
+	if noMasterNum > 0 {
+		if noMasterNum != len(room.Member) {
+			helper.Debug("存在出題人，則遊戲沒有結束1")
+			return true
+		}
+	}
+
+	return false
 }

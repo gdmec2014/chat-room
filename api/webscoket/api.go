@@ -64,24 +64,10 @@ func (this *WebSocketController) ReStart() {
 		this.SetReturnData(helper.FAILED, "人數不夠~不能開始", nil, false)
 		return
 	}
-	noMasterNum := 0
-	for _, m := range room.Member {
-		if m.UserType != NO_MASTER {
-			//存在出題人，則遊戲沒有結束
-			helper.Debug("存在出題人，則遊戲沒有結束2")
-			this.SetReturnData(helper.FAILED, "遊戲沒有結束,不能開始新的", nil, false)
-			return
-		} else {
-			noMasterNum++
-		}
-	}
 
-	if noMasterNum > 0 {
-		if noMasterNum != len(room.Member) {
-			helper.Debug("存在出題人，則遊戲沒有結束1")
-			this.SetReturnData(helper.FAILED, "遊戲沒有結束,不能開始新的", nil, false)
-			return
-		}
+	if isGameStart(room) {
+		this.SetReturnData(helper.FAILED, "游戏已经开始了喔~", nil, false)
+		return
 	}
 
 	helper.DebugStructToString(room)
@@ -90,6 +76,9 @@ func (this *WebSocketController) ReStart() {
 		room.Member[i].UserType = VIEWER
 	}
 
+	room.Times = 0
+	room.Mark = make(map[int][]Mark, 0)
+	updateRooms(room)
 	newWS(user, room, EVENT_GAME_RE_START)
 	this.SetReturnData(helper.SUCCESS, "成功", nil, false)
 }

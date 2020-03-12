@@ -81,7 +81,7 @@ paths:
         name: body
         description: 房间ID
         schema:
-          $ref: '#/definitions/Room'
+          $ref: '#/definitions/.Room'
       responses:
         helper.SQL_ERROR:
           description: '{object} helper.RestfulReturn'
@@ -100,7 +100,7 @@ paths:
         name: body
         description: 啊啊啊
         schema:
-          $ref: '#/definitions/Room'
+          $ref: '#/definitions/.Room'
       responses:
         helper.SQL_ERROR:
           description: '{object} helper.RestfulReturn "加入失败"'
@@ -151,7 +151,7 @@ paths:
         name: body
         description: WxData
         schema:
-          $ref: '#/definitions/WxData'
+          $ref: '#/definitions/.WxData'
       responses:
         helper.SQL_ERROR:
           description: '{object} helper.RestfulReturn 登陆失败'
@@ -170,7 +170,7 @@ paths:
         name: body
         description: WxData
         schema:
-          $ref: '#/definitions/WxData'
+          $ref: '#/definitions/.WxData'
       responses:
         helper.SQL_ERROR:
           description: '{object} helper.RestfulReturn 登陆失败'
@@ -179,33 +179,26 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
 definitions:
-  989.0xc000233380.false:
-    title: "false"
+  .Conn:
     type: object
-  Room:
-    title: Room
+  .Room:
     type: object
-  WxData:
-    title: WxData
+  .WxData:
+    type: object
+  .false:
     type: object
   helper.RestfulReturn:
     title: RestfulReturn
     type: object
     properties:
       Data:
-        $ref: '#/definitions/989.0xc000233380.false'
+        $ref: '#/definitions/989.0x119f6cc0.false'
       Message:
         type: string
       Result:
         $ref: '#/definitions/helper.Status'
   helper.Status:
-    title: Status
-    format: int64
-    type: integer
-    enum:
-    - SUCCESS = 10000
-    - SQL_ERROR = 50000
-    example: 10000
+    type: object
   models.User:
     title: User
     type: object
@@ -216,10 +209,10 @@ definitions:
         $ref: '#/definitions/websocket.Conn'
       delete_time:
         type: string
-        format: datetime
+        format: string
       last_login:
         type: string
-        format: datetime
+        format: string
       name:
         type: string
       nick_name:
@@ -235,9 +228,6 @@ definitions:
         format: int64
       wx_id:
         type: string
-  websocket.Conn:
-    title: Conn
-    type: object
 tags:
 - name: auth
   description: |
