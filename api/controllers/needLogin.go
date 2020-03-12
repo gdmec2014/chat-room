@@ -11,5 +11,5 @@ type NeedLoginController struct {
 }
 
 func (this *NeedLoginController)Prepare()  {
-	this.User = this.checkLogin()
+	this.User = this.CheckLogin()
 }

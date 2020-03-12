@@ -108,6 +108,19 @@ paths:
           description: '"加入成功"'
           schema:
             $ref: '#/definitions/helper.RestfulReturn'
+  /room/restart:
+    get:
+      tags:
+      - room
+      description: 重新開始遊戲
+      operationId: WebSocketController.重新開始遊戲
+      responses:
+        helper.SQL_ERROR:
+          description: '{object} helper.RestfulReturn'
+        helper.SUCCESS:
+          description: ""
+          schema:
+            $ref: '#/definitions/helper.RestfulReturn'
   /user/update_avatar:
     post:
       tags:
@@ -166,7 +179,7 @@ paths:
           schema:
             $ref: '#/definitions/models.User'
 definitions:
-  989.0xc00026aba0.false:
+  989.0xc000233380.false:
     title: "false"
     type: object
   Room:
@@ -180,7 +193,7 @@ definitions:
     type: object
     properties:
       Data:
-        $ref: '#/definitions/989.0xc00026aba0.false'
+        $ref: '#/definitions/989.0xc000233380.false'
       Message:
         type: string
       Result:

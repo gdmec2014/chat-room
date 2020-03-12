@@ -34,4 +34,13 @@ func init() {
             Filters: nil,
             Params: nil})
 
+    beego.GlobalControllerRouter["chat-room/api/webscoket:WebSocketController"] = append(beego.GlobalControllerRouter["chat-room/api/webscoket:WebSocketController"],
+        beego.ControllerComments{
+            Method: "ReStart",
+            Router: `/restart`,
+            AllowHTTPMethods: []string{"get"},
+            MethodParams: param.Make(),
+            Filters: nil,
+            Params: nil})
+
 }

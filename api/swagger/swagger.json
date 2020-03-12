@@ -167,6 +167,26 @@
                 }
             }
         },
+        "/room/restart": {
+            "get": {
+                "tags": [
+                    "room"
+                ],
+                "description": "重新開始遊戲",
+                "operationId": "WebSocketController.重新開始遊戲",
+                "responses": {
+                    "helper.SQL_ERROR": {
+                        "description": "{object} helper.RestfulReturn"
+                    },
+                    "helper.SUCCESS": {
+                        "description": "",
+                        "schema": {
+                            "$ref": "#/definitions/helper.RestfulReturn"
+                        }
+                    }
+                }
+            }
+        },
         "/user/update_avatar": {
             "post": {
                 "tags": [
@@ -259,7 +279,7 @@
         }
     },
     "definitions": {
-        "989.0xc00026aba0.false": {
+        "989.0xc000233380.false": {
             "title": "false",
             "type": "object"
         },
@@ -276,7 +296,7 @@
             "type": "object",
             "properties": {
                 "Data": {
-                    "$ref": "#/definitions/989.0xc00026aba0.false"
+                    "$ref": "#/definitions/989.0xc000233380.false"
                 },
                 "Message": {
                     "type": "string"

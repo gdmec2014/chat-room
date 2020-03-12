@@ -22,14 +22,29 @@
         .left {
             float: left;
         }
+
+        .disable {
+            pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
 <div id="app">
-
     <div v-show="in_room">
-        <canvas id="the_canvas" width="800" height="400"></canvas>
+        <div>
+            {{user_type_tip}}
+            <el-button @click="restart">再來一局</el-button>
+        </div>
+        <div v-if="g_time != 0">
+            倒計時：{{g_time}}
+        </div>
+        <div v-bind:class="[user_type == 102 ? '' : 'disable']">
+            <div v-if="user_type == 102 && answer">
+                題目:{{answer}}
+            </div>
+            <canvas id="the_canvas" width="800" height="400"></canvas>
+        </div>
     </div>
 
     <div v-if="!in_room">
@@ -45,7 +60,7 @@
             </el-form-item>
         </el-form>
         <el-form v-if="user" :model="rule_form" status-icon ref="rule_form" label-width="100px" class="demo-rule_form">
-            <el-form-item label="123" prop="pass">
+            <el-form-item label="创建房间" prop="pass">
                 <el-input type="test" v-model="msg" autocomplete="off"></el-input>
             </el-form-item>
             <el-form-item>
@@ -84,7 +99,9 @@
                     <div v-bind:class="[item.uid == user.uid ? 'right' : 'left']">
 
                         <p>
-                            {{item.msg}}
+                            <span v-bind:class="[item.uid == user.uid ? 'right' : 'left']"
+                                  style="font-size: 10px;color: #0d5aa7">{{item.name}}</span><br>
+                            <span style="font-size: 15px">{{item.msg}}</span>
                         </p>
                     </div>
 
@@ -115,11 +132,27 @@
     EVENT_NO_PLACE = 19 //房间满人了额
     EVENT_GAME_NO_START = 20 //还不能开始游戏事件
     EVENT_GAME_CAN_START = 21 //开始游戏事件
+    EVENT_GAME_ANSWER = 22 //回答问题事件
+    EVENT_GAME_BONUS = 23 //答对问题加分事件
+    EVENT_GAME_TIME = 24 //游戏计时事件
+    EVENT_GAME_OVER = 25 //游戏结束事件
+    EVENT_GAME_IS_START = 26 //遊戲正在進行，不能重複開始
+    EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
+
+    VIEWER = 100 //观众
+    PLAYER = 101 //猜一方
+    MASTER = 102 //出题一方
+    NO_MASTER = 103 //不可以再赋予出题一方，当全部玩家身份为103时候，游戏结束，结算分数
 
     let app = new Vue({
         el: '#app',
         data() {
             return {
+                all_over: false,
+                answer: "",
+                user_type: VIEWER,
+                user_type_tip: "正在打醬油",
+                g_time: 0,
                 room_msg: [],
                 in_room: false,
                 open_room_data: {
@@ -165,6 +198,31 @@
         },
 
         methods: {
+            restart() {
+                let that = this
+                let token = localStorage.getItem("token")
+                if (token) {
+                    //更新用戶信息
+                    $.ajax({
+                        type: "GET",
+                        url: "/v1/room/restart?token=" + token,
+                        contentType: "application/json; charset=utf-8",
+                        success: function (res) {
+                            console.log(res)
+                            if (res.Result == 10000) {
+
+                            } else {
+                                that.$message(res.Message);
+                            }
+                        },
+                        error: function (res) {
+                            console.error(res)
+                        }
+                    });
+                } else {
+                    this.$message("要先登陸喔~");
+                }
+            },
             updateUser() {
                 let that = this
                 let token = localStorage.getItem("token")
@@ -181,7 +239,7 @@
                                 that.initWebSocket()
                                 that.getAllRoom()
                             } else {
-                                this.$message(res.Message);
+                                that.$message(res.Message);
                             }
                         },
                         error: function (res) {
@@ -227,6 +285,8 @@
                         this.ws_data = data
                         console.log("创建成功", data)
                         this.all_room.push(data.room)
+                        //创建之后自己加入
+                        this.intoRoom(data)
                         break
                     case EVENT_JOIN:
                         console.log("加入成功", data)
@@ -242,19 +302,59 @@
                         break
                     case EVENT_DRAW:
                         //是否为绘画者，这个一定要判断，不然会无限发送事件
-                        console.log("绘图事件", data)
+                        //console.log("绘图事件", data)
                         this.is_master = data.data.user.uid == this.user.uid
                         this.receiveDraw(data.data.user.uid, data.room.id, data.data.position.x, data.data.position.y)
                         break
                     case EVENT_BREAK_DRAW:
                         //中断绘画
-                        console.log("中断绘图事件", data)
+                        //console.log("中断绘图事件", data)
                         this.is_master = data.data.user.uid == this.user.uid
                         if (!this.is_master) {
                             this.is_draw = false
                             this.in_start = false
                         }
                         break
+                    case EVENT_GAME_NO_START:
+                        //玩家加入房間，但人數沒全
+                        console.log("玩家加入房間，但人數沒全");
+                        this.openRoom(data.room.id)
+                        break
+                    case EVENT_GAME_CAN_START:
+                        //玩家加入房間，人數ok,開打
+                        console.log("玩家加入房間，人數ok,開打");
+                        this.openRoom(data.room.id)
+                        break
+                    case EVENT_GAME_ANSWER:
+                        //回答问题事件
+                        console.log("回答问题事件")
+                        break
+                    case EVENT_GAME_BONUS:
+                        //答对问题加分事件
+                        console.log("答对问题加分事件")
+                        break
+                    case EVENT_GAME_TIME:
+                        //游戏计时事件
+                        this.g_time = data.data
+                        if (data.room.key_word) {
+                            this.answer = data.room.key_word
+                        }
+                        if (this.g_time < 2) {
+                            this.user_type_tip = "你的時間要到了喔~"
+                            this.user_type = VIEWER
+                        }
+                        if (this.g_time < 2) {
+                            console.log("時間結束")
+                            this.answer = ""
+                        }
+                        this.updateIdentity(data)
+                        break
+                    case EVENT_GAME_OVER:
+                        console.log("結束");
+                        this.user_type_tip = "看看你多少分~"
+                        this.updateIdentity(data)
+                        break
+                    //游戏结束事件
                     default:
                         console.log("不知道是啥", data)
                 }
@@ -266,6 +366,58 @@
             websocketClose(e) { //关闭
                 console.log("connection closed (" + e.code + ")");
                 this.initWebSocket()
+            },
+            intoRoom(data) {
+                if (data.room.member) {
+                    var members = data.room.member
+                    for (var i = 0; i < members.length; i++) {
+                        //找到自己
+                        if (members[i].user_id == this.user.uid) {
+                            this.openRoom(data.room.id)
+                        }
+                    }
+                }
+            },
+            updateIdentity(data) {
+                //更新用戶身份
+                if (data.room.member) {
+                    var an = 0;
+                    var members = data.room.member
+                    for (var i = 0; i < members.length; i++) {
+                        //找到自己
+                        if (members[i].user_id == this.user.uid) {
+                            var t = members[i].user_type;
+                            this.user_type = t
+                            switch (t) {
+                                case VIEWER:
+                                    //观众
+                                    this.user_type_tip = "正在打醬油"
+                                    break
+                                case PLAYER:
+                                    //猜一方
+                                    this.user_type_tip = "正在觀摩對手的傑作"
+                                    break
+                                case MASTER:
+                                    //出题一方
+                                    this.user_type_tip = "現在是你的表演時間"
+                                    break
+                                case NO_MASTER:
+                                    //不可以再赋予出题一方，当全部玩家身份为103时候，游戏结束，结算分数
+                                    this.user_type_tip = "正在觀摩對手的傑作"
+                                    break
+                            }
+                        }
+                        //判斷是不是全部人都答了一輪
+                        if (members[i].user_type == NO_MASTER) {
+                            an++;
+                        }
+                        if (an == members.length) {
+                            console.info("全部人答了一輪，應該結算分數")
+                            this.user_type_tip = "看看你多少分~"
+                            this.all_over = true
+                        }
+                    }
+                }
             },
             createRoom() {
                 if (this.msg) {
@@ -279,6 +431,7 @@
                 }
             },
             joinRoom(room_id) {
+                console.log("1234:", room_id);
                 this.ws_data.room.id = room_id
                 this.ws_data.msg = "请求加入"
                 this.ws_data.event_type = EVENT_JOIN
@@ -328,6 +481,19 @@
                         console.log(res)
                         if (res.Result == 10000) {
                             that.all_room = res.Data
+                            //判斷有沒有在房間中，有就加入去
+                            if (that.user) {
+                                for (var i = 0; i < that.all_room.length; i++) {
+                                    var members = that.all_room[i].member
+                                    for (var j = 0; j < members.length; j++) {
+                                        if (members[j].user_id == that.user.uid) {
+                                            console.log("c");
+                                            that.openRoom(that.all_room[i].id)
+                                            break
+                                        }
+                                    }
+                                }
+                            }
                         } else {
                             that.$message.error(res.Message);
                         }
@@ -399,6 +565,9 @@
             },
             //按下鼠标
             onMouseDown(e) {
+                if (this.user_type != MASTER) {
+                    return
+                }
                 if (!this.is_master) {
                     return
                 }
@@ -416,11 +585,14 @@
             },
             //松开鼠标
             onMouseup() {
-                this.breakDraw()
-                if (!this.is_master) {
-                    //告诉其他画家，哥哥我中断了绘画
+                if (this.user_type != MASTER) {
                     return
                 }
+                if (!this.is_master) {
+                    return
+                }
+                //告诉其他画家，哥哥我中断了绘画
+                this.breakDraw()
                 this.is_draw = false
             },
             //绘制到屏幕

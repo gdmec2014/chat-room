@@ -97,7 +97,7 @@ func (this *BaseController) GetPostDataNotStop(data interface{}) {
 	helper.Debug(string(this.Ctx.Input.RequestBody))
 }
 
-func (this *BaseController) checkLogin() (user models.User) {
+func (this *BaseController) CheckLogin() (user models.User) {
 	Token := this.Ctx.Input.Header("Authorization")
 	if len(Token) < 1 {
 		Token = this.GetString("token")

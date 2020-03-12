@@ -249,12 +249,18 @@ func GetAppConfWithDefault(name, def string) (ret string) {
 }
 
 func GetAppConfInt(name string) int {
-	num, _ := beego.AppConfig.Int(name)
+	num, err := beego.AppConfig.Int(name)
+	if helper.Error(err) {
+		num = 0
+	}
 	return num
 }
 
 func GetAppConfInt64(name string) int64 {
-	num, _ := beego.AppConfig.Int64(name)
+	num, err := beego.AppConfig.Int64(name)
+	if helper.Error(err) {
+		num = 0
+	}
 	return num
 }
 

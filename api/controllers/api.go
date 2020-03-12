@@ -16,11 +16,11 @@ func (this *ApiController) GetRunTime() {
 }
 
 func (this *ApiController) GetUserByToken() {
-	user := this.checkLogin()
+	user := this.CheckLogin()
 	this.SetReturnData(helper.SUCCESS, "love you", user)
 }
 
 func (this *ApiController) GetUserByWXId() {
-	user := this.checkLogin()
+	user := this.CheckLogin()
 	this.SetReturnData(helper.SUCCESS, "love you", user)
 }

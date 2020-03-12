@@ -49,7 +49,7 @@ func (this *WebSocketController) join() {
 						return
 					}
 					roomId := helper.GetRandomString(16)
-					Create(this.User, roomId, m.Room.Name, m.Room.MaxMember)
+					Create(this.User, roomId, m.Room.Name)
 					break
 				case EVENT_JOIN:
 					Join(this.User, m.Room.Id)

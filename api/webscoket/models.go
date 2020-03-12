@@ -4,6 +4,7 @@ import (
 	"chat-room/api/helper"
 	"chat-room/api/models"
 	"container/list"
+	"github.com/astaxie/beego"
 	"strconv"
 	"strings"
 	"time"
@@ -14,22 +15,25 @@ import (
 type EventType int
 
 const (
-	EVENT_HAND           = 10 //握手事件
-	EVENT_CREATE         = 11 //创房事件
-	EVENT_JOIN           = 12 //加房事件
-	EVENT_LEAVE          = 13 //离线事件
-	EVENT_MESSAGE        = 14 //消息事件
-	EVENT_INVAILD        = 15 //无效事件
-	EVENT_DRAW           = 16 //绘图事件
-	EVENT_BREAK_DRAW     = 17 //中断绘画事件
-	EVENT_GIVE_IDENTITY  = 18 //转换游戏身份事件
-	EVENT_NO_PLACE       = 19 //房间满人不能加入事件
-	EVENT_GAME_NO_START  = 20 //还不能开始游戏事件
-	EVENT_GAME_CAN_START = 21 //开始游戏事件
-	EVENT_GAME_ANSWER    = 22 //回答问题事件
-	EVENT_GAME_BONUS     = 23 //答对问题加分事件
-	EVENT_GAME_TIME      = 24 //游戏计时事件
-	EVENT_GAME_OVER      = 25 //游戏结束事件
+	EVENT_HAND                   = 10 //握手事件
+	EVENT_CREATE                 = 11 //创房事件
+	EVENT_JOIN                   = 12 //加房事件
+	EVENT_LEAVE                  = 13 //离线事件
+	EVENT_MESSAGE                = 14 //消息事件
+	EVENT_INVAILD                = 15 //无效事件
+	EVENT_DRAW                   = 16 //绘图事件
+	EVENT_BREAK_DRAW             = 17 //中断绘画事件
+	EVENT_GIVE_IDENTITY          = 18 //转换游戏身份事件
+	EVENT_NO_PLACE               = 19 //房间满人不能加入事件
+	EVENT_GAME_NO_START          = 20 //还不能开始游戏事件
+	EVENT_GAME_CAN_START         = 21 //开始游戏事件
+	EVENT_GAME_ANSWER            = 22 //回答问题事件
+	EVENT_GAME_BONUS             = 23 //答对问题加分事件
+	EVENT_GAME_TIME              = 24 //游戏计时事件
+	EVENT_GAME_OVER              = 25 //游戏结束事件
+	EVENT_GAME_IS_START          = 26 //遊戲正在進行，不能重複開始
+	EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
+	EVENT_GAME_RE_START          = 28 //重新開始遊戲
 )
 
 type UserType int
@@ -44,6 +48,7 @@ const (
 
 type youPerformIGuess struct {
 	MaxNumber int `json:"max_number"`
+	TimeOver  int `json:"time_over"`
 }
 
 var (
@@ -58,6 +63,11 @@ func init() {
 	if YouPerformIGuess.MaxNumber < 1 {
 		YouPerformIGuess.MaxNumber = 6
 	}
+	YouPerformIGuess.TimeOver = models.GetAppConfInt("youPerformIGuess::timeOver")
+	if YouPerformIGuess.TimeOver < 1 {
+		YouPerformIGuess.TimeOver = 30
+	}
+	beego.Info(YouPerformIGuess)
 }
 
 func InitData() {
@@ -130,25 +140,31 @@ func addUser(user models.User) {
 //更新房间成员
 func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) {
 
-	newMember := make([]Member, 0)
-	newMember = append(newMember, member)
+	//判斷用戶是否在房間
+	isInRoom := isMemberInRoom(room.Id, member.UserId)
 
-	has := false
+	newMember := make([]Member, 0)
+
+	if !isInRoom {
+		newMember = append(newMember, member)
+	}
+
+	hasRoom := false
 
 	for r := allRooms.Front(); r != nil; r = r.Next() {
 		helper.Debug(r.Value.(Room))
 		if r.Value.(Room).Id == room.Id {
-			newRoom.MaxMember = r.Value.(Room).MaxMember
+			hasRoom = true
+			newRoom.MaxMember = YouPerformIGuess.MaxNumber
 			helper.Debug("存在房间，更新成员")
 			for _, m := range r.Value.(Room).Member {
 				if m.UserId != member.UserId {
-					if len(newMember) < newRoom.MaxMember {
-						has = true
+					if len(r.Value.(Room).Member) < YouPerformIGuess.MaxNumber {
 						newMember = append(newMember, m)
 					} else {
 						//人数已经满了，不可以再加了啦
 						newRoom = Room{
-							MaxMember: r.Value.(Room).MaxMember,
+							MaxMember: YouPerformIGuess.MaxNumber,
 							Id:        r.Value.(Room).Id,
 							Name:      r.Value.(Room).Name,
 							Member:    r.Value.(Room).Member}
@@ -158,24 +174,27 @@ func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) 
 				}
 			}
 			newRoom = Room{
-				MaxMember: r.Value.(Room).MaxMember,
+				MaxMember: YouPerformIGuess.MaxNumber,
 				Id:        r.Value.(Room).Id,
 				Name:      r.Value.(Room).Name,
 				Member:    newMember}
 			allRooms.Remove(r)
 			addRooms(newRoom)
-			if len(newMember) == 6 {
+			if len(newMember) == YouPerformIGuess.MaxNumber {
 				helper.Debug("人数已经齐了，开打")
 				code = EVENT_GAME_CAN_START
+			} else {
+				//人还没满呢
+				code = EVENT_GAME_NO_START
 			}
 		}
 	}
 
 	//不存在房间，就加进去
-	if !has {
+	if !hasRoom {
 		helper.Debug("不存在房间，新加")
 		newRoom = Room{
-			MaxMember: room.MaxMember,
+			MaxMember: YouPerformIGuess.MaxNumber,
 			Id:        room.Id,
 			Name:      room.Name,
 			Member:    newMember}
@@ -183,10 +202,6 @@ func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) 
 	}
 
 	go updateRedisRoomsMember(room.Id, room.Name, member)
-
-	//人还没满呢
-
-	code = EVENT_GAME_NO_START
 
 	return
 }
@@ -233,6 +248,26 @@ func getAllRooms() (rooms []Room) {
 	return
 }
 
+//根據用戶獲取房間
+func getRoomByMember(uid int64) (room Room, has bool) {
+	rooms := getAllRooms()
+	if len(rooms) < 1 {
+		has = false
+		return
+	}
+
+	for _, room = range rooms {
+		for _, m := range room.Member {
+			if uid == m.UserId {
+				has = true
+				return
+			}
+		}
+	}
+
+	return
+}
+
 //获取房间的用户
 func getMemberByRoom(room Room) (user []models.User) {
 
@@ -246,6 +281,19 @@ func getMemberByRoom(room Room) (user []models.User) {
 		}
 	}
 
+	return
+}
+
+//判斷用戶是否在房間
+func isMemberInRoom(roomId string, uid int64) (has bool) {
+	has = false
+	room := getRoom(roomId)
+	for _, m := range room.Member {
+		if uid == m.UserId {
+			has = true
+			return
+		}
+	}
 	return
 }
 

@@ -188,3 +188,10 @@ func ReadBody(resp *http.Response) []byte {
 	Debug(buf.String())
 	return buf.Bytes()
 }
+
+func DebugStructToString(i interface{}) {
+	if IsDebug {
+		b, _ := json.MarshalIndent(i, "", " ")
+		Debug(string(b))
+	}
+}
