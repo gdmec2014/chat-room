@@ -34,6 +34,7 @@ const (
 	EVENT_GAME_IS_START          = 26 //遊戲正在進行，不能重複開始
 	EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
 	EVENT_GAME_RE_START          = 28 //重新開始遊戲
+	EVENT_NEW_DRAW               = 29 //新的绘图事件
 )
 
 type UserType int
@@ -399,6 +400,11 @@ func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) 
 
 //判断游戏是不是在进行中
 func isGameStart(room Room) bool {
+
+	//判断游戏人数
+	if len(room.Member) != YouPerformIGuess.MaxNumber{
+		return false
+	}
 
 	noMasterNum := 0
 	for _, m := range room.Member {

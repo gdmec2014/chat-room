@@ -3,6 +3,7 @@ package models
 import (
 	"chat-room/api/helper"
 	"github.com/gorilla/websocket"
+	"sync"
 	"time"
 )
 
@@ -18,6 +19,7 @@ type User struct {
 	DeleteTime time.Time       `xorm:"comment('删除时间') DATETIME" json:"delete_time,omitempty"`
 	RePassword string          `xorm:"-" json:"re_password,omitempty"`
 	Conn       *websocket.Conn `xorm:"-" json:"conn"` // 用户与后台握手
+	Mutex      sync.Mutex      `xorm:"-" json:"mutex"`         //锁
 }
 
 func AddUser(user *User) error {

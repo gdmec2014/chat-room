@@ -54,13 +54,15 @@
         <div v-if="g_time != 0">
             倒計時：{{g_time}}
         </div>
-        <div v-bind:class="[user_type == 102 ? '' : 'disable']">
+        <div v-show="user_type == 102">
             <div v-if="user_type == 102 && answer">
                 題目:{{answer}}
             </div>
             <canvas id="the_canvas" width="800" height="400"></canvas>
         </div>
-
+        <div style="height: 500px" v-show="user_type != 102">
+            <img :src="img" v-show="img"/>
+        </div>
     </div>
 
     <div v-if="!in_room">
@@ -103,7 +105,7 @@
 
     </div>
 
-    <el-card v-else v-show="user_type != 102">
+    <el-card v-else>
         <div slot="header" class="clearfix">
         </div>
 
@@ -153,6 +155,9 @@
     EVENT_GAME_OVER = 25 //游戏结束事件
     EVENT_GAME_IS_START = 26 //遊戲正在進行，不能重複開始
     EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
+    EVENT_GAME_RE_START = 28 //重新開始遊戲
+    EVENT_NEW_DRAW = 29 //新的绘图事件
+
 
     VIEWER = 100 //观众
     PLAYER = 101 //猜一方
@@ -163,6 +168,7 @@
         el: '#app',
         data() {
             return {
+                img: "",
                 members: [],
                 all_over: false,
                 answer: "",
@@ -291,7 +297,7 @@
             },
             websocketOnMessage(event) { //数据接收
                 let data = JSON.parse(event.data);
-
+                console.log(data)
                 switch (data.event_type) {
                     case EVENT_HAND:
                         console.log("握手成功", data)
@@ -311,11 +317,17 @@
                         break
                     case EVENT_MESSAGE:
                     case EVENT_GAME_ANSWER:
+                    case EVENT_GAME_BONUS:
                         console.log("收到消息", data)
                         let msg = data.data
                         msg["msg"] = data.msg
                         console.log(msg)
                         this.setLocalStorageMsg(msg)
+                        break
+                    case EVENT_NEW_DRAW:
+                        console.log("新的绘图事件")
+                        this.is_master = data.data.user.uid == this.user.uid
+                        this.newReceiveDraw(data.data.user.uid, data.room.id, data.data.position)
                         break
                     case EVENT_DRAW:
                         //是否为绘画者，这个一定要判断，不然会无限发送事件
@@ -384,7 +396,8 @@
                     case EVENT_GIVE_IDENTITY:
                         //赋予游戏身份
                         console.log("赋予游戏身份");
-                        this.the_canvas.height = this.the_canvas.height;
+                        this.the_canvas.height = this.the_canvas.height
+                        this.img = ""
                         break
                     case EVENT_GAME_BONUS:
                         console.log("加分事件");
@@ -636,6 +649,7 @@
                 let ele = this.windowToCanvas(this.the_canvas, e.clientX, e.clientY)
                 let {x, y} = ele
                 //绘制起点。
+                this.context.beginPath()
                 this.context.moveTo(x, y)
                 //鼠标移动事件
                 this.the_canvas.onmousemove = (e) => {
@@ -663,7 +677,8 @@
                     this.context.stroke()
                     //是绘制者才应该发送数据去
                     if (this.is_master) {
-                        this.sendDraw(x, y)
+                        this.newSendDraw()
+                        //this.sendDraw(x, y)
                     }
                 }
             },
@@ -683,6 +698,15 @@
                 this.is_draw = true
                 this.draw(x, y)
             },
+            newReceiveDraw(draw_user_id, draw_room_id, pic_url) {
+                //自己绘制的图，不需要再画在屏幕
+                //不是自己的房间，不要画图
+                if (draw_user_id == this.user.uid || draw_room_id != this.open_room_data.id) {
+                    return
+                }
+                console.log(pic_url)
+                this.img = pic_url
+            },
             //发送绘图事件
             sendDraw(x, y) {
                 this.ws_data.room.id = this.open_room_data.id
@@ -691,11 +715,24 @@
                 this.ws_data.data = {x, y}
                 this.websocketSend(JSON.stringify(this.ws_data));
             },
-            breakDraw() {
+            newSendDraw() {
                 this.ws_data.room.id = this.open_room_data.id
-                this.ws_data.msg = "中断绘图"
-                this.ws_data.event_type = EVENT_BREAK_DRAW
+                this.ws_data.msg = "绘图"
+                //this.ws_data.event_type = EVENT_DRAW
+                this.ws_data.event_type = EVENT_NEW_DRAW
+
+                var d = this.the_canvas.toDataURL("image/png", 0.9);
+                console.log("d --", d)
+                this.ws_data.data = d
                 this.websocketSend(JSON.stringify(this.ws_data));
+            },
+            breakDraw() {
+                this.newSendDraw()
+
+                // this.ws_data.room.id = this.open_room_data.id
+                // this.ws_data.msg = "中断绘图"
+                // this.ws_data.event_type = EVENT_BREAK_DRAW
+                // this.websocketSend(JSON.stringify(this.ws_data));
             }
         },
     })

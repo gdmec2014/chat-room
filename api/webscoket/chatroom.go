@@ -7,6 +7,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/gorilla/websocket"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -42,6 +43,7 @@ type Event struct {
 	TimeUnix  int64       `json:"time_unix"`  // 消息时间戳
 	Data      interface{} `json:"data"`       // 附带数据    //返回後端的字段
 	Uid       int64       `json:"uid"`        // 用戶id 房間人滿的時候用到
+	Mutex     sync.Mutex  `json:"mutex"`      //锁
 }
 
 var (
@@ -73,7 +75,7 @@ func Create(user models.User, roomId, roomName string) {
 		CorrectNumber: 0,
 		MaxMember:     YouPerformIGuess.MaxNumber,
 	}
-	room.Mark = make(map[int][]Mark,0)
+	room.Mark = make(map[int][]Mark, 0)
 	newWS(user, room, EVENT_CREATE)
 }
 
@@ -177,6 +179,9 @@ func chatRoom() {
 	for {
 		select {
 		case event := <-publish:
+
+			event.Mutex.Lock()
+
 			switch event.EventType {
 			case EVENT_HAND:
 				helper.Debug("握手")
@@ -216,6 +221,9 @@ func chatRoom() {
 				break
 			case EVENT_GAME_BONUS:
 				helper.Debug("加分事件")
+				break
+			case EVENT_NEW_DRAW:
+				helper.Debug("新的绘图事件")
 				break
 			default:
 				//握手时候，没有房间号
@@ -321,6 +329,7 @@ func broadcastWebSocket(event Event) {
 			}
 		}
 	}
+	defer event.Mutex.Unlock()
 }
 
 //开始游戏

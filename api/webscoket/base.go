@@ -25,7 +25,9 @@ func (this *WebSocketController) join() {
 	}
 
 	// 加入房间
+	this.User.Mutex.Lock()
 	this.User.Conn = ws
+	defer this.User.Mutex.Unlock()
 	updateUserConn(this.User)
 
 	// 轮询读取消息
@@ -54,7 +56,7 @@ func (this *WebSocketController) join() {
 				case EVENT_JOIN:
 					Join(this.User, m.Room.Id)
 					break
-				case EVENT_DRAW:
+				case EVENT_DRAW, EVENT_NEW_DRAW:
 					data := make(map[string]interface{})
 					data["user"] = this.User
 					data["position"] = m.Data
@@ -147,7 +149,7 @@ func (this *WebSocketController) join() {
 									}
 									if !hasAdd {
 										correctNumber := len(m.Room.Mark[m.Room.Times])
-										correctNumber ++
+										correctNumber++
 										mark.Point = int(100 / correctNumber)
 										m.Room.Mark[m.Room.Times] = append(m.Room.Mark[m.Room.Times], mark)
 										updateRooms(m.Room)
