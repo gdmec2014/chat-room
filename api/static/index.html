@@ -297,7 +297,7 @@
             },
             websocketOnMessage(event) { //数据接收
                 let data = JSON.parse(event.data);
-                console.log(data)
+                //console.log(data)
                 switch (data.event_type) {
                     case EVENT_HAND:
                         console.log("握手成功", data)
@@ -677,7 +677,7 @@
                     this.context.stroke()
                     //是绘制者才应该发送数据去
                     if (this.is_master) {
-                        this.newSendDraw()
+                        //this.newSendDraw()
                         //this.sendDraw(x, y)
                     }
                 }
@@ -721,8 +721,8 @@
                 //this.ws_data.event_type = EVENT_DRAW
                 this.ws_data.event_type = EVENT_NEW_DRAW
 
-                var d = this.the_canvas.toDataURL("image/png", 0.9);
-                console.log("d --", d)
+                var d = this.the_canvas.toDataURL("image/png", 0.2);
+               // console.log("d --", d)
                 this.ws_data.data = d
                 this.websocketSend(JSON.stringify(this.ws_data));
             },

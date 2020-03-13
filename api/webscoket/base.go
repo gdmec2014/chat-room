@@ -25,9 +25,7 @@ func (this *WebSocketController) join() {
 	}
 
 	// 加入房间
-	this.User.Mutex.Lock()
 	this.User.Conn = ws
-	defer this.User.Mutex.Unlock()
 	updateUserConn(this.User)
 
 	// 轮询读取消息
@@ -39,7 +37,7 @@ func (this *WebSocketController) join() {
 		if len(p) > 3 {
 			var m Event
 			msg := string(p)
-			helper.Debug("msg --- ", msg)
+			//helper.Debug("msg --- ", msg)
 			err := json.Unmarshal([]byte(msg), &m)
 			if !helper.Error(err) {
 				switch m.EventType {

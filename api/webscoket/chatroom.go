@@ -23,6 +23,7 @@ type Room struct {
 	MaxMember     int            `json:"max_member"`     //游戏最大人数
 	Times         int            `json:"times"`          //经历了几轮游戏
 	Mark          map[int][]Mark `json:"mark"`           //每一轮的分数
+	MasterId      int64          `json:"master_id"`      //谁发送的消息
 }
 
 type Mark struct {
@@ -130,6 +131,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 				r := rand.New(rand.NewSource(time.Now().UnixNano()))
 				key := r.Intn(lenVocabulary)
 				newRoom.KeyWord = vocabulary[key]
+				newRoom.MasterId = user.Id
 				updateRooms(newRoom)
 				go startGame(newRoom)
 				break
@@ -180,7 +182,6 @@ func chatRoom() {
 		select {
 		case event := <-publish:
 
-			event.Mutex.Lock()
 
 			switch event.EventType {
 			case EVENT_HAND:
@@ -303,6 +304,29 @@ func broadcastWebSocket(event Event) {
 			member = append(member, user)
 		}
 		break
+	case EVENT_NEW_DRAW:
+		//不用发给自己了
+		room = getRoom(event.Room.Id)
+		if len(room.Member) > 0 {
+			member = getMemberByRoom(room)
+			newMember := make([]models.User, 0)
+
+			helper.Debug("event.Room.MasterId -- ",event.Room.MasterId)
+
+			for _, m := range member {
+				if event.Room.MasterId != m.Id {
+					newMember = append(newMember, m)
+				}
+			}
+
+			member = newMember
+			//helper.DebugStructToString(member)
+		} else {
+			//已经没有用户了，应该销毁他
+			helper.Debug("已经没有用户了，应该销毁他")
+			return
+		}
+		break
 	default:
 		room = getRoom(event.Room.Id)
 		if len(room.Member) > 0 {
@@ -319,6 +343,7 @@ func broadcastWebSocket(event Event) {
 		helper.Debug("已經~晚了")
 	}
 
+	event.Mutex.Lock()
 	for _, m := range member {
 		ws := m.Conn
 		if ws != nil {
