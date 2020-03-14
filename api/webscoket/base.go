@@ -176,6 +176,11 @@ func (this *WebSocketController) join() {
 						helper.Debug("masterId:", masterId)
 						if needBonus {
 
+							//答对啦，奖你一包辣条
+							m.EventType = EVENT_SYSTEM_MESSAGE
+							m.Msg = "恭喜" + this.User.Name + "答对了"
+							publish <- m
+
 							mm = m.Room.Mark[m.Room.Times]
 							hasMaster := false
 
@@ -206,15 +211,16 @@ func (this *WebSocketController) join() {
 								//应该结束本轮
 								helper.Debug("应该结束本轮")
 								m.Room.IsOver = true
+								//发送上个答案
+								m.EventType = EVENT_SYSTEM_MESSAGE
+								m.Msg = "答案：" + room.KeyWord
+								publish <- m
 							}
 
 							m.Room.MasterId = masterId
 
 							updateRooms(m.Room)
-							//答对啦，奖你一包辣条
-							m.EventType = EVENT_SYSTEM_MESSAGE
-							m.Msg = "恭喜" + this.User.Name + "答对了"
-							publish <- m
+
 						}
 					}
 
