@@ -26,11 +26,15 @@
         .disable {
             /*pointer-events: none;*/
         }
+
+        #app {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
-<div id="app">
+<div id="app" v-loading="loading">
     <div v-show="in_room">
         <div v-if="members.length > 0" style="max-width: 300px;float: right">
             <el-table
@@ -48,7 +52,7 @@
             </el-table>
         </div>
         <div>
-           <span v-if="user">{{user.name}}</span>:  {{user_type_tip}}
+            <span v-if="user">{{user.name}}</span>: {{user_type_tip}}
             <el-button @click="restart">开始</el-button>
         </div>
         <div v-if="g_time != 0">
@@ -167,6 +171,7 @@
         el: '#app',
         data() {
             return {
+                loading: true,
                 img: "",
                 members: [],
                 all_over: false,
@@ -225,6 +230,7 @@
         },
 
         mounted() {
+            document.getElementById("app").style.display = "block";
             this.drawInit()
             this.updateUser()
         },
@@ -297,12 +303,14 @@
                 this.websock.onclose = this.websocketClose;
             },
             websocketOnOpen() {
+                this.loading = false
                 console.log("WebSocket连接成功");
                 this.ws_data.msg = "握手测试"
                 this.ws_data.event_type = EVENT_HAND
                 this.websocketSend(JSON.stringify(this.ws_data));
             },
             websocketOnError(e) { //错误
+                this.loading = true
                 console.log("WebSocket连接发生错误");
             },
             websocketOnMessage(event) { //数据接收
@@ -323,7 +331,6 @@
                     case EVENT_JOIN:
                         console.log("加入成功", data)
                         this.$message(data.msg);
-                        this.getAllRoom()
                         break
                     case EVENT_SYSTEM_MESSAGE:
                         this.msg_data.msg = data.msg
@@ -445,7 +452,7 @@
             },
             initMember(data) {
                 //初始化用户信息
-                if (this.members.length < 1){
+                if (this.members.length < 1) {
                     if (data.room.member) {
                         this.members = []
                         var members = data.room.member
