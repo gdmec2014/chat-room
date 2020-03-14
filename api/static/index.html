@@ -48,8 +48,8 @@
             </el-table>
         </div>
         <div>
-            {{user_type_tip}}
-            <el-button @click="restart">再來一局</el-button>
+           <span v-if="user">{{user.name}}</span>:  {{user_type_tip}}
+            <el-button @click="restart">开始</el-button>
         </div>
         <div v-if="g_time != 0">
             倒計時：{{g_time}}
@@ -111,10 +111,9 @@
 
         <div style="min-height: 10rem">
 
-            <el-row>
-                <el-col :key="'msg_'+index" v-for="(item,index) in room_msg" style="width: 100%" :span="24">
+            <el-row style="max-height: 200px;overflow-y: scroll">
+                <el-col :key="'msg_'+index" v-for="(item,index) in room_msg" style="width: 100%;" :span="24">
                     <div v-bind:class="[item.uid == user.uid ? 'right' : 'left']">
-
                         <p>
                             <span v-bind:class="[item.uid == user.uid ? 'right' : 'left']"
                                   style="font-size: 10px;color: #0d5aa7">{{item.name}}</span><br>
@@ -126,7 +125,7 @@
             </el-row>
         </div>
 
-        <div>
+        <div v-show="user_type != 102">
             <el-input type="textarea" v-model="ws_data.msg"></el-input>
             <el-button type="primary" @click="sendMsg" style="float: right;margin: 2rem">send</el-button>
         </div>
@@ -157,7 +156,7 @@
     EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
     EVENT_GAME_RE_START = 28 //重新開始遊戲
     EVENT_NEW_DRAW = 29 //新的绘图事件
-
+    EVENT_SYSTEM_MESSAGE = 30 //系统消息
 
     VIEWER = 100 //观众
     PLAYER = 101 //猜一方
@@ -205,7 +204,18 @@
                 is_draw: false,   //是否正在绘制，松开鼠标时候应该为false
                 the_canvas: null, //画布
                 is_master: true,  //是否当前绘画者
-                in_start: false   //是否绘制了起点
+                in_start: false,   //是否绘制了起点
+                msg_data: {
+                    uid: -1,
+                    name: "系统消息",
+                    nick_name: "小灰",
+                    wx_id: "gdmec_2331333",
+                    last_login: "2020-03-12T18:39:48+08:00",
+                    delete_time: "0001-01-01T00:00:00Z",
+                    conn: {},
+                    mutex: {},
+                    msg: "这是系统消息"
+                }
             }
         },
 
@@ -315,13 +325,16 @@
                         this.$message(data.msg);
                         this.getAllRoom()
                         break
+                    case EVENT_SYSTEM_MESSAGE:
+                        this.msg_data.msg = data.msg
+                        this.setLocalStorageMsg(this.msg_data)
+                        break
                     case EVENT_MESSAGE:
                     case EVENT_GAME_ANSWER:
                     case EVENT_GAME_BONUS:
-                        console.log("收到消息", data)
+                        //console.log("收到消息", data)
                         let msg = data.data
                         msg["msg"] = data.msg
-                        console.log(msg)
                         this.setLocalStorageMsg(msg)
                         break
                     case EVENT_NEW_DRAW:
@@ -347,12 +360,14 @@
                     case EVENT_GAME_NO_START:
                         //玩家加入房間，但人數沒全
                         console.log("玩家加入房間，但人數沒全");
+                        console.log(data);
                         this.openRoom(data.room.id)
                         this.initMember(data)
+                        this.joinRoomMsg(data)
                         break
                     case EVENT_GAME_CAN_START:
                         //玩家加入房間，人數ok,開打
-                        console.log("玩家加入房間，人數ok,開打");
+                        console.log("開打");
                         this.the_canvas.height = this.the_canvas.height;
                         this.openRoom(data.room.id)
                         this.initMember(data)
@@ -414,15 +429,31 @@
                 console.log("connection closed (" + e.code + ")");
                 this.initWebSocket()
             },
+            joinRoomMsg(data) {
+                if (data.uid > 0) {
+                    if (data.room.member) {
+                        var members = data.room.member
+                        for (var i = 0; i < members.length; i++) {
+                            if (data.uid == members[i].user_id) {
+                                this.msg_data.msg = members[i].user_name + "加入了房间"
+                                this.setLocalStorageMsg(this.msg_data)
+                                break
+                            }
+                        }
+                    }
+                }
+            },
             initMember(data) {
                 //初始化用户信息
-                if (data.room.member) {
-                    this.members = []
-                    var members = data.room.member
-                    for (var i = 0; i < members.length; i++) {
-                        var m = members[i]
-                        m.point = 0
-                        this.members.push(m)
+                if (this.members.length < 1){
+                    if (data.room.member) {
+                        this.members = []
+                        var members = data.room.member
+                        for (var i = 0; i < members.length; i++) {
+                            var m = members[i]
+                            m.point = 0
+                            this.members.push(m)
+                        }
                     }
                 }
             },
@@ -513,6 +544,17 @@
                 this.websocketSend(JSON.stringify(this.ws_data));
             },
             sendMsg() {
+                if (this.ws_data.msg) {
+                    console.log("this.ws_data --", this.ws_data)
+                    this.ws_data.room.id = this.open_room_data.id
+                    this.ws_data.msg = this.ws_data.msg
+                    this.ws_data.event_type = EVENT_GAME_ANSWER
+                    this.websocketSend(JSON.stringify(this.ws_data));
+                } else {
+                    this.$message("要输入东西喔~");
+                }
+            },
+            sendSystemMsg() {
                 if (this.ws_data.msg) {
                     console.log("this.ws_data --", this.ws_data)
                     this.ws_data.room.id = this.open_room_data.id
@@ -648,6 +690,7 @@
                 //获得鼠标按下的点相对canvas的坐标。
                 let ele = this.windowToCanvas(this.the_canvas, e.clientX, e.clientY)
                 let {x, y} = ele
+
                 //绘制起点。
                 this.context.beginPath()
                 this.context.moveTo(x, y)
@@ -671,8 +714,9 @@
                 if (this.is_draw) {
                     //移动时获取新的坐标位置，用lineTo记录当前的坐标，然后stroke绘制上一个点到当前点的路径
                     let ele = this.windowToCanvas(this.the_canvas, old_x, old_y)
-                    console.log(ele)
+                    //console.log(ele)
                     let {x, y} = ele
+
                     this.context.lineTo(x, y)
                     this.context.stroke()
                     //是绘制者才应该发送数据去
@@ -704,7 +748,7 @@
                 if (draw_user_id == this.user.uid || draw_room_id != this.open_room_data.id) {
                     return
                 }
-                console.log(pic_url)
+                //console.log(pic_url)
                 this.img = pic_url
             },
             //发送绘图事件
@@ -722,7 +766,7 @@
                 this.ws_data.event_type = EVENT_NEW_DRAW
 
                 var d = this.the_canvas.toDataURL("image/png", 0.2);
-               // console.log("d --", d)
+                // console.log("d --", d)
                 this.ws_data.data = d
                 this.websocketSend(JSON.stringify(this.ws_data));
             },

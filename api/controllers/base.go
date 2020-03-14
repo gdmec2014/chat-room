@@ -94,7 +94,7 @@ func (this *BaseController) GetPostData(data interface{}) {
 
 func (this *BaseController) GetPostDataNotStop(data interface{}) {
 	json.Unmarshal(this.Ctx.Input.RequestBody, data)
-	helper.Debug(string(this.Ctx.Input.RequestBody))
+	//helper.Debug(string(this.Ctx.Input.RequestBody))
 }
 
 func (this *BaseController) CheckLogin() (user models.User) {
@@ -102,14 +102,14 @@ func (this *BaseController) CheckLogin() (user models.User) {
 	if len(Token) < 1 {
 		Token = this.GetString("token")
 	}
-	helper.Debug("Token :", Token)
+	//helper.Debug("Token :", Token)
 	if len(Token) != 32 {
 		this.SetReturnData(helper.TOKEN_ERROR, "no token", nil)
 	}
-	user = models.User{Token:Token}
-	has, user , err := models.GetUserByToken(&user)
+	user = models.User{Token: Token}
+	has, user, err := models.GetUserByToken(&user)
 
-	helper.Debug(user)
+	//helper.Debug(user)
 
 	if helper.Error(err) {
 		this.SetReturnData(helper.FAILED, err.Error(), err)

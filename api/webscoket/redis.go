@@ -11,12 +11,12 @@ import (
 var RidesClient *redis.Client
 
 func init() {
-	helper.Debug("init RidesClient")
+	//helper.Debug("init RidesClient")
 	RidesClient = redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "", // no password set
 		DB:       0,  // use default DB
-	}) 
+	})
 
 	pong, err := RidesClient.Ping().Result()
 	if helper.Error(err) {
@@ -45,7 +45,7 @@ func GetMap(name string) (data map[string]string) {
 	r := RidesClient.HGetAll(name)
 	data, err = r.Result()
 	helper.Error(err)
-	helper.Debug("GetMap:", data)
+	//helper.Debug("GetMap:", data)
 	return data
 }
 
@@ -74,7 +74,7 @@ func GetSet(name string, data interface{}) {
 		return
 	}
 
-	helper.Debug("GetSet : ", values)
+	//helper.Debug("GetSet : ", values)
 
 	switch data.(type) {
 	case *[]Member:

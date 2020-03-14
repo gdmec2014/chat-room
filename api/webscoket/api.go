@@ -59,7 +59,8 @@ func (this *WebSocketController) ReStart() {
 		return
 	}
 
-	if len(room.Member) < YouPerformIGuess.MaxNumber {
+	//超过两个人就可以开始游戏
+	if len(room.Member) < 2 {
 		helper.Debug("人數不夠~不能開始")
 		this.SetReturnData(helper.FAILED, "人數不夠~不能開始", nil, false)
 		return
@@ -70,7 +71,7 @@ func (this *WebSocketController) ReStart() {
 		return
 	}
 
-	helper.DebugStructToString(room)
+	//helper.DebugStructToString(room)
 
 	for i, _ := range room.Member {
 		room.Member[i].UserType = VIEWER

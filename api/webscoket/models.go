@@ -35,6 +35,7 @@ const (
 	EVENT_GAME_MEMBER_NOT_ENOUGH = 27 //人數不夠，不能開始遊戲
 	EVENT_GAME_RE_START          = 28 //重新開始遊戲
 	EVENT_NEW_DRAW               = 29 //新的绘图事件
+	EVENT_SYSTEM_MESSAGE         = 30 //系统消息
 )
 
 type UserType int
@@ -79,22 +80,22 @@ func init() {
 func InitData() {
 	var redisRoomsId []string
 	GetSet("room", &redisRoomsId)
-	helper.Debug("InitData redisRoomsId", redisRoomsId)
+	//helper.Debug("InitData redisRoomsId", redisRoomsId)
 	for i, _ := range redisRoomsId {
 		go func(i int) {
 			var room Room
 			redisRoomId := redisRoomsId[i]
 			redisRoomId = strings.Replace(redisRoomId, "\"", "", -1)
-			helper.Debug("InitData redisRoomId", redisRoomId)
+			//helper.Debug("InitData redisRoomId", redisRoomId)
 			if len(redisRoomId) < 1 {
 				DelSet("room", redisRoomId)
 				return
 			}
 			redisRoomMap := GetMap(redisRoomId)
 
-			helper.Debug("InitData redisRoomMap", redisRoomMap)
+			//helper.Debug("InitData redisRoomMap", redisRoomMap)
 
-			helper.Debug(redisRoomMap)
+			//helper.Debug(redisRoomMap)
 			_, ok := redisRoomMap["Name"]
 			if ok {
 				if len(redisRoomMap["Name"]) < 1 {
@@ -106,7 +107,7 @@ func InitData() {
 				DelSet("room", redisRoomId)
 				return
 			}
-			helper.Debug("InitData redisRoom name", room.Name)
+			//helper.Debug("InitData redisRoom name", room.Name)
 			_, ok = redisRoomMap["TimeUnix"]
 			if ok {
 				timeUnix, err := strconv.ParseInt(redisRoomMap["TimeUnix"], 10, 64)
@@ -118,7 +119,7 @@ func InitData() {
 				DelSet("room", redisRoomId)
 				return
 			}
-			helper.Debug("InitData redisRoom TimeUnix", room.TimeUnix)
+			//helper.Debug("InitData redisRoom TimeUnix", room.TimeUnix)
 			var member []Member
 			GetSet(redisRoomId+"_member", &member)
 			if len(member) < 1 {
@@ -128,7 +129,7 @@ func InitData() {
 			}
 			room.Member = member
 			room.Id = redisRoomId
-			helper.Debug("InitData redisRoom Member", room.Member)
+			//helper.Debug("InitData redisRoom Member", room.Member)
 			allRooms.PushBack(room)
 		}(i)
 	}
@@ -155,9 +156,24 @@ func updateRooms(room Room) {
 	if needUpdate {
 		addRooms(room)
 	}
-	helper.DebugStructToString(room)
-}
 
+	//b, _ := json.MarshalIndent(room, "", " ")
+	//_, files, line, ok := runtime.Caller(1)
+	//if !ok {
+	//	fmt.Println(fmt.Errorf("Error: Cant not print!"))
+	//	return
+	//}
+	//fs := strings.Split(files, "/")
+	//file := ""
+	//file = fs[0]
+	//if len(fs) > 2 {
+	//	file = fs[len(fs)-2] + "/" + fs[len(fs)-1]
+	//}
+	//fileline := "[" + file + ":" + strconv.Itoa(line) + "]"
+	//go beego.Debug(fileline, string(b), "\r\n")
+	//
+	//helper.DebugStructToString(getRoom(room.Id))
+}
 
 //更新房间成员
 func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) {
@@ -174,11 +190,11 @@ func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) 
 	hasRoom := false
 
 	for r := allRooms.Front(); r != nil; r = r.Next() {
-		helper.Debug(r.Value.(Room))
+		//helper.Debug(r.Value.(Room))
 		if r.Value.(Room).Id == room.Id {
 			hasRoom = true
 			newRoom.MaxMember = YouPerformIGuess.MaxNumber
-			helper.Debug("存在房间，更新成员")
+			//helper.Debug("存在房间，更新成员")
 			for _, m := range r.Value.(Room).Member {
 				if m.UserId != member.UserId {
 					if len(r.Value.(Room).Member) < YouPerformIGuess.MaxNumber {
@@ -203,7 +219,7 @@ func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) 
 			allRooms.Remove(r)
 			addRooms(newRoom)
 			if len(newMember) == YouPerformIGuess.MaxNumber {
-				helper.Debug("人数已经齐了，开打")
+				//helper.Debug("人数已经齐了，开打")
 				code = EVENT_GAME_CAN_START
 			} else {
 				//人还没满呢
@@ -214,7 +230,7 @@ func updateRoomsMember(room Room, member Member) (newRoom Room, code EventType) 
 
 	//不存在房间，就加进去
 	if !hasRoom {
-		helper.Debug("不存在房间，新加")
+		//helper.Debug("不存在房间，新加")
 		newRoom = Room{
 			MaxMember: YouPerformIGuess.MaxNumber,
 			Id:        room.Id,
@@ -235,7 +251,7 @@ func updateUserConn(user models.User) {
 		if r.Value.(models.User).Id == user.Id {
 			//关闭旧的连接
 			//r.Value.(models.User).Conn.Close()
-			helper.Debug("存在用户，更新")
+			//helper.Debug("存在用户，更新")
 			has = true
 			newUser := r.Value.(models.User)
 			newUser.Conn = user.Conn
@@ -246,7 +262,7 @@ func updateUserConn(user models.User) {
 	}
 	//不存在用户，就加进去
 	if !has {
-		helper.Debug("不存在用户，新加")
+		//helper.Debug("不存在用户，新加")
 		addUser(user)
 	}
 }
@@ -349,24 +365,24 @@ func hasMember(id int64) (has bool, user models.User) {
 
 //use redis
 func updateRedisRooms(room Room) {
-	helper.Debug("updateRedisRooms --- ", room)
+	//helper.Debug("updateRedisRooms --- ", room)
 	//保存在总的房间
 	if !IsInSet("room", room.Id) {
-		helper.Debug("updateRedisRooms set room id", room.Id)
+		//helper.Debug("updateRedisRooms set room id", room.Id)
 		SetSAdd("room", room.Id)
 	}
 
 	if helper.IsDebug {
-		var rs []string                                //测试
-		GetSet("room", &rs)                            //测试
-		helper.Debug("updateRedisRooms get rooms", rs) //测试
+		var rs []string     //测试
+		GetSet("room", &rs) //测试
+		//helper.Debug("updateRedisRooms get rooms", rs) //测试
 	}
 
 	//房间信息
 	roomData := make(map[string]interface{})
 	roomData["Name"] = room.Name
 	roomData["TimeUnix"] = time.Now().Unix()
-	helper.Debug("updateRedisRooms set room map ", roomData)
+	//helper.Debug("updateRedisRooms set room map ", roomData)
 
 	SetMap(room.Id, roomData)
 
@@ -383,9 +399,9 @@ func updateRedisRooms(room Room) {
 	}
 
 	if helper.IsDebug {
-		var member []Member                                         //测试
-		GetSet(room.Id+"_member", &member)                          //测试
-		helper.Debug("updateRedisRooms get room  member :", member) //测试
+		var member []Member                //测试
+		GetSet(room.Id+"_member", &member) //测试
+		//helper.Debug("updateRedisRooms get room  member :", member) //测试
 	}
 }
 
@@ -401,25 +417,23 @@ func updateRedisRoomsMember(roomId, roomName string, member Member) (room Room) 
 //判断游戏是不是在进行中
 func isGameStart(room Room) bool {
 
-	//判断游戏人数
-	if len(room.Member) != YouPerformIGuess.MaxNumber{
-		return false
-	}
-
+	room = getRoom(room.Id)
 	noMasterNum := 0
+
 	for _, m := range room.Member {
-		if m.UserType != NO_MASTER {
+		if m.UserType == PLAYER || m.UserType == MASTER {
 			//存在出題人，則遊戲沒有結束
-			helper.Debug("存在出題人，則遊戲沒有結束2")
+			//helper.Debug("存在出題人，則遊戲沒有結束2")
 			return true
-		} else {
+		}
+		if m.UserType == NO_MASTER {
 			noMasterNum++
 		}
 	}
 
 	if noMasterNum > 0 {
 		if noMasterNum != len(room.Member) {
-			helper.Debug("存在出題人，則遊戲沒有結束1")
+			//helper.Debug("存在出題人，則遊戲沒有結束1")
 			return true
 		}
 	}

@@ -192,6 +192,18 @@ func ReadBody(resp *http.Response) []byte {
 func DebugStructToString(i interface{}) {
 	if IsDebug {
 		b, _ := json.MarshalIndent(i, "", " ")
-		Debug(string(b))
+		_, files, line, ok := runtime.Caller(1)
+		if !ok {
+			fmt.Println(fmt.Errorf("Error: Cant not print!"))
+			return
+		}
+		fs := strings.Split(files, "/")
+		file := ""
+		file = fs[0]
+		if len(fs) > 2 {
+			file = fs[len(fs)-2] + "/" + fs[len(fs)-1]
+		}
+		fileline := "[" + file + ":" + strconv.Itoa(line) + "]"
+		go beego.Debug(fileline, string(b), "\r\n")
 	}
 }

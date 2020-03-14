@@ -24,11 +24,13 @@ type Room struct {
 	Times         int            `json:"times"`          //经历了几轮游戏
 	Mark          map[int][]Mark `json:"mark"`           //每一轮的分数
 	MasterId      int64          `json:"master_id"`      //谁发送的消息
+	IsOver        bool           `json:"is_over"`        //是否结束本轮
 }
 
 type Mark struct {
-	Id    int64 `json:"id"`
-	Point int   `json:"point"`
+	Id        int64 `json:"id"`
+	Point     int   `json:"point"`
+	HasAnswer bool  `json:"has_answer"`
 }
 
 type Member struct {
@@ -54,15 +56,8 @@ var (
 
 //加入房间
 func Join(user models.User, roomId string) {
-	room := Room{
-		Id:            roomId,
-		Name:          "才不知道是啥名字",
-		TimeUnix:      time.Now().Unix(),
-		KeyWord:       "",
-		CorrectNumber: 0,
-		MaxMember:     YouPerformIGuess.MaxNumber,
-	}
-	helper.Debug("Join", room)
+	room := getRoom(roomId)
+	//helper.Debug("Join", room)
 	newWS(user, room, EVENT_JOIN)
 }
 
@@ -82,7 +77,6 @@ func Create(user models.User, roomId, roomName string) {
 
 //封装消息
 func newWS(user models.User, room Room, eventType EventType) {
-	helper.Debug("封装消息")
 
 	var newRoom Room
 
@@ -97,26 +91,26 @@ func newWS(user models.User, room Room, eventType EventType) {
 
 	//房间nil是握手的房间
 	if room.Id != "nil" {
-		helper.Debug("更新房间成员")
+		//helper.Debug("更新房间成员")
 		//更新房间成员
 		var code EventType
 		if EVENT_GAME_RE_START != eventType {
 			newRoom, code = updateRoomsMember(room, member)
 		} else {
-			helper.Debug("重新開始遊戲")
+			//helper.Debug("重新開始遊戲")
 			code = EVENT_GAME_CAN_START
 			newRoom = room
 		}
 		msg = user.Name + " 加入了房间 " + newRoom.Name
 
 		if eventType != EVENT_CREATE {
-			helper.Debug("code:", code)
+			//helper.Debug("code:", code)
 			eventType = code
 			switch code {
 			case EVENT_GAME_CAN_START:
 				//开始游戏
 				msg = "准备好了么~要开始了喔~"
-				helper.Debug("准备好了么~要开始了喔~")
+				//helper.Debug("准备好了么~要开始了喔~")
 				//赋予玩家身份
 				for i, _ := range newRoom.Member {
 					if i == 0 {
@@ -132,18 +126,19 @@ func newWS(user models.User, room Room, eventType EventType) {
 				key := r.Intn(lenVocabulary)
 				newRoom.KeyWord = vocabulary[key]
 				newRoom.MasterId = user.Id
+
 				updateRooms(newRoom)
 				go startGame(newRoom)
 				break
 			case EVENT_GAME_NO_START:
 				//人数还不够，不可以开始喔
 				msg = "人数还不够，不可以开始喔~"
-				helper.Debug("人数还不够，不可以开始喔~")
+				//helper.Debug("人数还不够，不可以开始喔~")
 				break
 			case EVENT_NO_PLACE:
 				//房间不能加人了
 				msg = "房间已经满人了喔！"
-				helper.Debug("房间已经满人了喔！")
+				//helper.Debug("房间已经满人了喔！")
 				break
 			}
 		}
@@ -151,7 +146,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 	} else {
 		eventType = EVENT_INVAILD
 		msg = "无效事件"
-		helper.Debug("无效事件~")
+		//helper.Debug("无效事件~")
 		members := make([]Member, 0)
 		members = append(members, member)
 		newRoom = Room{
@@ -168,7 +163,7 @@ func newWS(user models.User, room Room, eventType EventType) {
 		EventType: eventType,
 		Room:      newRoom}
 
-	//helper.DebugStructToString(event)
+	////helper.DebugStructToString(event)
 
 	event.Uid = user.Id
 
@@ -181,54 +176,54 @@ func chatRoom() {
 	for {
 		select {
 		case event := <-publish:
-
-
 			switch event.EventType {
 			case EVENT_HAND:
-				helper.Debug("握手")
-				event.EventType = EVENT_HAND
+				//helper.Debug("握手")
 				event.Msg = "握手成功"
 				break
 			case EVENT_JOIN, EVENT_GAME_NO_START:
 				//加入房间
-				helper.Debug("加入房间")
+				//helper.Debug("加入房间")
 				break
 			case EVENT_CREATE:
 				//创建房间
-				helper.Debug("创建房间")
+				//helper.Debug("创建房间")
 				event.Room.Id = helper.GetRandomString(16)
 				break
 			case EVENT_MESSAGE:
-				helper.Debug("发送信息")
+				//helper.Debug("发送信息")
 				break
 			case EVENT_DRAW:
 				event.Msg = "啊！请接收绘图"
-				helper.Debug("绘图")
+				//helper.Debug("绘图")
 				break
 			case EVENT_BREAK_DRAW:
 				event.Msg = "啊！请中断绘图"
-				helper.Debug("中断绘图")
+				//helper.Debug("中断绘图")
 				break
 			case EVENT_GAME_CAN_START:
 				event.Msg = "还不可以开始喔~"
-				helper.Debug("还不可以开始喔~")
+				//helper.Debug("还不可以开始喔~")
 				break
 			case EVENT_NO_PLACE:
 				event.Msg = "人已经满了喔~"
-				helper.Debug("人已经满了喔~")
+				//helper.Debug("人已经满了喔~")
 				break
 			case EVENT_GAME_ANSWER:
-				helper.Debug("回答问题")
+				//helper.Debug("回答问题")
 				break
 			case EVENT_GAME_BONUS:
-				helper.Debug("加分事件")
+				//helper.Debug("加分事件")
 				break
 			case EVENT_NEW_DRAW:
-				helper.Debug("新的绘图事件")
+				//helper.Debug("新的绘图事件")
+				break
+			case EVENT_SYSTEM_MESSAGE:
+				//helper.Debug("系统消息")
 				break
 			default:
 				//握手时候，没有房间号
-				helper.Debug("假装握手")
+				//helper.Debug("假装握手")
 				event.EventType = EVENT_HAND
 				event.Msg = "握手成功"
 			}
@@ -252,7 +247,7 @@ func broadcastWebSocket(event Event) {
 	var room Room
 	var member []models.User
 
-	//helper.Debug("event.EventType -- ",event.EventType)
+	////helper.Debug("event.EventType -- ",event.EventType)
 
 	switch event.EventType {
 	case EVENT_CREATE:
@@ -260,7 +255,7 @@ func broadcastWebSocket(event Event) {
 		member = getAllMember()
 		break
 	case EVENT_HAND:
-		helper.Debug("新建房间，握手，需要发送数据给自己 -> ", event.Room.Member[0].UserId)
+		//helper.Debug("新建房间，握手，需要发送数据给自己 -> ", event.Room.Member[0].UserId)
 		//新建房间，握手，需要发送数据给自己
 		if len(event.Room.Member) > 0 {
 			var has bool
@@ -275,7 +270,7 @@ func broadcastWebSocket(event Event) {
 		break
 	case EVENT_NO_PLACE:
 		event.Msg = "人已经满了喔~"
-		helper.Debug("人已经满了喔~")
+		//helper.Debug("人已经满了喔~")
 		room = getRoom(event.Room.Id)
 		has, user := hasMember(event.Uid)
 		if has {
@@ -285,7 +280,7 @@ func broadcastWebSocket(event Event) {
 		break
 	case EVENT_GAME_IS_START:
 		event.Msg = "遊戲正在進行中喔~"
-		helper.Debug("遊戲正在進行中喔~")
+		//helper.Debug("遊戲正在進行中喔~")
 		room = getRoom(event.Room.Id)
 		has, user := hasMember(event.Uid)
 		if has {
@@ -295,10 +290,10 @@ func broadcastWebSocket(event Event) {
 		break
 	case EVENT_GAME_MEMBER_NOT_ENOUGH:
 		event.Msg = "人數沒满喔~不可以開始"
-		helper.Debug("人數沒满喔~不可以開始")
+		//helper.Debug("人數沒满喔~不可以開始")
 		room = getRoom(event.Room.Id)
 		has, user := hasMember(event.Uid)
-		helper.Debug("has", has, event.Uid)
+		//helper.Debug("has", has, event.Uid)
 		if has {
 			member = make([]models.User, 0)
 			member = append(member, user)
@@ -311,7 +306,7 @@ func broadcastWebSocket(event Event) {
 			member = getMemberByRoom(room)
 			newMember := make([]models.User, 0)
 
-			helper.Debug("event.Room.MasterId -- ",event.Room.MasterId)
+			//helper.Debug("event.Room.MasterId -- ", event.Room.MasterId)
 
 			for _, m := range member {
 				if event.Room.MasterId != m.Id {
@@ -320,10 +315,10 @@ func broadcastWebSocket(event Event) {
 			}
 
 			member = newMember
-			//helper.DebugStructToString(member)
+			////helper.DebugStructToString(member)
 		} else {
 			//已经没有用户了，应该销毁他
-			helper.Debug("已经没有用户了，应该销毁他")
+			//helper.Debug("已经没有用户了，应该销毁他")
 			return
 		}
 		break
@@ -331,16 +326,16 @@ func broadcastWebSocket(event Event) {
 		room = getRoom(event.Room.Id)
 		if len(room.Member) > 0 {
 			member = getMemberByRoom(room)
-			//helper.DebugStructToString(member)
+			////helper.DebugStructToString(member)
 		} else {
 			//已经没有用户了，应该销毁他
-			helper.Debug("已经没有用户了，应该销毁他")
+			//helper.Debug("已经没有用户了，应该销毁他")
 			return
 		}
 	}
 
 	if event.EventType == EVENT_GAME_OVER {
-		helper.Debug("已經~晚了")
+		//helper.Debug("已經~晚了")
 	}
 
 	event.Mutex.Lock()
@@ -362,6 +357,8 @@ func startGame(room Room) bool {
 
 	t := 0
 	t1 := time.NewTimer(time.Second * 1)
+
+	room.IsOver = false
 
 	event := Event{
 		EventType: 0,
@@ -403,28 +400,33 @@ loop:
 							hasMaster = true
 							event.Room.Member[i].UserType = MASTER
 						}
+						updateRooms(event.Room)
 						break
 					}
 				}
-				helper.Debug("isOver:", isOver)
+				//helper.Debug("isOver:", isOver)
 
 				if isOver == len(event.Room.Member) {
 					room.Times++
 					if YouPerformIGuess.Times < room.Times {
 						//中断游戏
-						helper.Debug("游戏已經結束啦")
+						//helper.Debug("游戏已經結束啦")
 						event.EventType = EVENT_GAME_OVER
 						broadcastWebSocket(event)
 					} else {
 						helper.Debug("第", room.Times, "轮游戏")
-						for i, _ := range room.Member {
+
+						//新的一轮交换顺序
+						newMember := make([]Member, 0)
+						for i := len(room.Member) - 1; i > -1; i-- {
 							room.Member[i].UserType = VIEWER
+							newMember = append(newMember, room.Member[i])
 						}
+						room.Member = newMember
 						user := models.User{}
 						newWS(user, room, EVENT_GAME_RE_START)
 					}
 					newRoom := getRoom(room.Id)
-					newRoom.Times = room.Times
 					updateRooms(newRoom)
 					break loop
 				} else {
@@ -433,12 +435,20 @@ loop:
 					broadcastWebSocket(event)
 				}
 			} else {
-				//推送本轮游戏剩余时间
 				newRoom := getRoom(room.Id)
-				event.Room = newRoom
-				event.EventType = EVENT_GAME_TIME
-				event.Data = YouPerformIGuess.TimeOver - t
-				broadcastWebSocket(event)
+				if newRoom.IsOver {
+					room = newRoom
+					updateRooms(newRoom)
+					helper.Debug("全部人已经回答完了")
+					//全部人已经回答完了
+					t = YouPerformIGuess.TimeOver + 1
+				} else {
+					//推送本轮游戏剩余时间
+					event.Room = newRoom
+					event.EventType = EVENT_GAME_TIME
+					event.Data = YouPerformIGuess.TimeOver - t
+					broadcastWebSocket(event)
+				}
 			}
 			t1.Reset(time.Second * 1)
 		}
