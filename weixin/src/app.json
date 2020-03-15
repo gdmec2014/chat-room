@@ -3,7 +3,25 @@
     {
       "path": "pages/home/index",
       "config": {
-        "navigationBarTitleText": "weixin"
+        "navigationBarTitleText": "欢迎小可爱"
+      }
+    },
+    {
+      "path": "pages/room/game",
+      "config": {
+        "navigationBarTitleText": "游戏房间"
+      }
+    },
+    {
+      "path": "pages/room/list",
+      "config": {
+        "navigationBarTitleText": "房间列表"
+      }
+    },
+    {
+      "path": "pages/room/create",
+      "config": {
+        "navigationBarTitleText": "创建房间"
       }
     }
   ],

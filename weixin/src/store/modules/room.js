@@ -6,11 +6,7 @@ let room = {
         data: {
             all_room: [],
             in_page: 0,
-            open_room_data: {
-                id: "",
-                name: "",
-                user_type: 0
-            },
+            open_room_data: {},
             ws_data: {
                 event_type: 0,
                 room: {
@@ -21,7 +17,8 @@ let room = {
                 },
                 msg: "",
                 data: {}
-            }
+            },
+            re_ws_data: {}
         }
     },
 
@@ -37,7 +34,11 @@ let room = {
         SET_OPEN_ROOM_DATA: (state, data) => {
             console.log("设置open room data ", data)
             state.data.open_room_data = data
-        }
+        },
+        GET_WS_DATA: (state, data) => {
+            console.log("设置 re ws data ", data)
+            state.data.re_ws_data = data
+        },
     },
 
     actions: {
@@ -68,14 +69,14 @@ let room = {
         },
         SetOpenRoomData({
             commit
-        }, room) {
-            let open_room_data = {
-                id: room.id,
-                name: room.name,
-                user_type: 0
-            }
+        }, open_room_data) {
             commit('SET_OPEN_ROOM_DATA', open_room_data)
-        }
+        },
+        GetWsData({
+            commit
+        }, data) {
+            commit('GET_WS_DATA', data)
+        },
     }
 }
 

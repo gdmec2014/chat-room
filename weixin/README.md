@@ -25,3 +25,9 @@ npm run build --report
 
 ### http 请求
 >[fly](https://github.com/wendux/fly)
+
+### vuex持久化
+>[vuex-persistedstate](https://github.com/robinvdvleuten/vuex-persistedstate)
+
+### canvas
+>[vnode2canvas](https://github.com/muwoo/vnode2canvas/blob/master/examples/mpvue/README.md)

@@ -1,11 +1,9 @@
 <template>
   <div>
     <div v-if="in_page == 0">
-      <a class="counter" @click="ShowCreateRoom">创建房间</a>
-      <a class="counter" @click="ViewRoom">查看房间</a>
+      <a class="counter" @click="SetViewRoomPage('/pages/room/create')">创建房间</a>
+      <a class="counter" @click="SetViewRoomPage('/pages/room/list')">查看房间</a>
     </div>
-    <roomCreate v-if="in_page == 1"/>
-    <roomList v-if="in_page == 2"/>
   </div>
 </template>
 
@@ -52,8 +50,8 @@ export default {
       this.SetViewRoomPage(1);
       this.$store.dispatch("GetAllRoom");
     },
-    SetViewRoomPage(in_page) {
-      this.$store.dispatch("SetRoomPage", in_page);
+    SetViewRoomPage(url) {
+      this.$router.push(url);
     }
   }
 };

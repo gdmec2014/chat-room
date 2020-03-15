@@ -37,12 +37,18 @@
     <div class="bnt">
       <van-button @click="createRoom" class="bnt" size="normal" type="primary">创建</van-button>
     </div>
+
+    <ws></ws>
   </div>
 </template> 
 
 <script>
+import ws from "./ws";
+
 export default {
   name: "room_create",
+  components: { ws },
+
   data() {
     return {};
   },

@@ -228,6 +228,8 @@ func (this *WebSocketController) join() {
 				default:
 					//握手
 					member := Member{
+						Avatar:   this.User.Avatar,
+						NickName: this.User.NickName,
 						UserType: 0,
 						UserId:   this.User.Id,
 						UserName: this.User.Name,

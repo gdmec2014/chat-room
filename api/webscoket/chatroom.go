@@ -37,6 +37,8 @@ type Member struct {
 	UserType UserType `json:"user_type"` // 用户类型跟房间，因为不是每一个房间的身份都一样
 	UserId   int64    `json:"user_id"`   // 用户ID
 	UserName string   `json:"user_name"` // 用户名
+	NickName string   `json:"nick_name"` // 微信用到
+	Avatar   string   `json:"avatar"`    // 用户头像
 }
 
 type Event struct {
@@ -84,9 +86,11 @@ func newWS(user models.User, room Room, eventType EventType) {
 	msg := "加入成功"
 
 	member := Member{
+		NickName: user.NickName,
 		UserType: VIEWER,
 		UserId:   user.Id,
 		UserName: user.Name,
+		Avatar:   user.Avatar,
 	}
 
 	//房间nil是握手的房间

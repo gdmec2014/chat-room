@@ -15,6 +15,7 @@ import (
 // @router /hand [get]
 func (this *WebSocketController) Hand() {
 	if models.DBOk {
+		this.CheckLogin()
 		this.join()
 	}
 	this.SetReturnData(helper.SUCCESS, "握手成功", nil, false)

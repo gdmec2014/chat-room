@@ -1,6 +1,5 @@
 <script>
 import { getToken } from "./utils/auto";
-
 export default {
   created() {
     // 调用API从本地缓存中获取数据
@@ -9,11 +8,11 @@ export default {
     wx.setStorageSync("logs", logs);
     console.log("app created and cache logs by setStorageSync");
     //获取token
-    let token = getToken()
+    let token = getToken();
     if (token) {
-        this.$store.dispatch("CheckUserLogin")
-    }else{
-       this.$store.dispatch("SetWXUserData")
+      this.$store.dispatch("CheckUserLogin");
+    } else {
+      this.$store.dispatch("SetWXUserData");
     }
   }
 };
