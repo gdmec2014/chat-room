@@ -5,7 +5,7 @@ import {
 
 
 const fly = new Fly()
-const host = "http://127.0.0.1:2332"
+const host = "http://192.168.0.108:2332"
 //添加请求拦截器
 fly.interceptors.request.use((request) => {
     wx.showLoading({

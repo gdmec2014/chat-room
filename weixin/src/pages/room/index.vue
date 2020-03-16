@@ -52,6 +52,8 @@ import { GetAllRoom } from "../../api/room";
 
 export default {
   name: "room",
+  mpType: "page",
+
   data() {
     return {
       all_room: [],
@@ -100,7 +102,7 @@ export default {
     },
     joinRoom(room_id) {
       this.ws_data.room.id = room_id;
-      this.ws_data.msg = "请求加入"; 
+      this.ws_data.msg = "请求加入";
       this.ws_data.event_type = this.Code.EVENT_JOIN;
       let data = this.ws_data;
       console.log(JSON.stringify(data));

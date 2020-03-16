@@ -1,7 +1,12 @@
 <template>
   <div>
     <div class="van-card" v-for="(item,index) in all_room" :key="index">
-      <van-card currency=" " :price="item.member.length+'/'+item.max_member" desc="一起来玩" :title="item.name">
+      <van-card
+        currency=" "
+        :price="item.member.length+'/'+item.max_member"
+        desc="一起来玩"
+        :title="item.name"
+      >
         <view slot="footer">
           <van-button size="mini" @click="joinRoom(item.id)">加入</van-button>
         </view>
@@ -13,6 +18,8 @@
 <script>
 export default {
   name: "room_list",
+  mpType: "page",
+
   data() {
     return {};
   },
@@ -33,7 +40,7 @@ export default {
       this.ws_data.msg = "请求加入";
       this.ws_data.event_type = this.Code.EVENT_JOIN;
       let data = this.ws_data;
-      data.room.max_member = 0
+      data.room.max_member = 0;
       console.log(JSON.stringify(data));
       this.$sendSocketMessage(data);
     }

@@ -19,10 +19,9 @@ import ws from "./ws";
 
 export default {
   name: "game",
+  mpType: "page",
+
   components: { ws },
-  canvasIdErrorCallback: function(e) {
-    console.error(e.detail.errMsg);
-  },
   data() {
     return {
       showCanvas: true,

@@ -4,7 +4,9 @@
 
 <script>
 export default {
-  name: "game",
+  name: "msg",
+  mpType: "page",
+
   data() {
     return {
       img: "",

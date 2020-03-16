@@ -46,6 +46,8 @@
 import ws from "./ws";
 
 export default {
+  mpType: "page",
+
   name: "room_create",
   components: { ws },
 

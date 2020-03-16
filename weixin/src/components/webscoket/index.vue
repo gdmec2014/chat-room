@@ -3,7 +3,7 @@ import store from "../../store";
 export default {
   data() {
     return {
-      url: "ws://127.0.0.1:2332/v1/room/hand?token=",
+      url: "ws://192.168.0.108:2332/v1/room/hand?token=",
       ws: null,
       socket_open: false,
       re_data: {}
@@ -27,8 +27,9 @@ export default {
   },
   methods: {
     init() {
+      const url = this.url + this.user.token;
       wx.connectSocket({
-        url: this.url + this.user.token
+        url
       });
       wx.onSocketOpen(res => this.onSocketOpen(res));
       wx.onSocketMessage(res => this.onSocketMessage(res));
